@@ -1,8 +1,9 @@
 from fastapi import FastAPI
-from pymongo import MongoClient
 from pydantic import BaseModel
 from typing import List
-from app.db.database import strategyHistory_collection, db
+from pymongo import MongoClient
+
+# from .db.database import strategyHistory_collection, users_collection, db
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate, ChatPromptTemplate
 from langchain.chains import RetrievalQA, LLMChain
@@ -18,44 +19,58 @@ app = FastAPI()
 
 llm = ChatOpenAI(model="gpt-4", openai_api_key=os.getenv("OPENAI_API_KEY"))
 
+
+# DB Setting
+MONGO_URI = os.getenv("MONGO_URI")
+client = MongoClient(MONGO_URI)
+db = client["compass"]
+users_collection = db["users"]
+strategyHistory_collection = db["strategyHistory"]
+
 # 데이터 모델 정의
 
+
 class Transactions(BaseModel):
-    created_date: str #입출금날짜
-    amount: str #거래금액
-    is_dividend: int #배당금이면 1, 내가 납입한 거면 0
+    created_date: str  # 입출금날짜
+    amount: str  # 거래금액
+    is_dividend: int  # 배당금이면 1, 내가 납입한 거면 0
+
 
 class Market(BaseModel):
-    created_date: str #거래날짜
-    buysell: int #buy는 1, sell은 0
-    stock_name: str #종목명
-    stock_amount: str #거래수량
-    stock_price: str #거래단가
-    average: str #평균단가가
+    created_date: str  # 거래날짜
+    buysell: int  # buy는 1, sell은 0
+    stock_name: str  # 종목명
+    stock_amount: str  # 거래수량
+    stock_price: str  # 거래단가
+    average: str  # 평균단가가
+
 
 class Stocks(BaseModel):
-    stock_name: str #종목명
-    average: str #평균단가가 쉼표 넣어서 작성, ex) 2,000,000
-    valuation: str #평가금액
-    stock_amount: str #보유수량
+    stock_name: str  # 종목명
+    average: str  # 평균단가가 쉼표 넣어서 작성, ex) 2,000,000
+    valuation: str  # 평가금액
+    stock_amount: str  # 보유수량
+
 
 class AccountInfo(BaseModel):
-    managing: str #운용사
-    account_status: int #계좌상태
-    account_number: str #계좌번호
-    account_category: str #계좌종류 (IRP, ISA, 연금저축펀드, 해외주식계좌, 일반계좌)
-    balance: str #평가금액
-    purchase: str #매수금액
-    profit: str #평가손익
-    created_date: str #계좌개설일
-    transactions: List[Transactions] #입출금
-    market: List[Market] #매매내역
-    stocks: List[Stocks] #보유종목
+    managing: str  # 운용사
+    account_status: int  # 계좌상태
+    account_number: str  # 계좌번호
+    account_category: str  # 계좌종류 (IRP, ISA, 연금저축펀드, 해외주식계좌, 일반계좌)
+    balance: str  # 평가금액
+    purchase: str  # 매수금액
+    profit: str  # 평가손익
+    created_date: str  # 계좌개설일
+    transactions: List[Transactions]  # 입출금
+    market: List[Market]  # 매매내역
+    stocks: List[Stocks]  # 보유종목
+
 
 # (3) LangChain을 사용하여 ChatGPT로 절세 전략 보고서 생성
 @app.post("/generate_report")
 async def generate_report(user_id: str, account_info: List[AccountInfo]):
-    prompt = ChatPromptTemplate.from_template("""
+    prompt = ChatPromptTemplate.from_template(
+        """
     너는 대한민국의 증권 계좌를 통한 절세 도우미야. 네가 할 일은 계좌 정보를 확인하여, 각 계좌 정보에 맞는 세액 공제 및 절세 전략을 추천해 줘야 해.
 
         account-info의 데이터 정보는 다음과 같아.
@@ -108,19 +123,38 @@ async def generate_report(user_id: str, account_info: List[AccountInfo]):
         
         보고서 형식으로 친절하게 대답해 줘.
         사용자의 계좌 정보: {account-info-list}
-    """)
-    report_text = (prompt|llm|StrOutputParser()).invoke({"account-info-list":account_info})
+    """
+    )
+    report_text = (prompt | llm | StrOutputParser()).invoke(
+        {"account-info-list": account_info}
+    )
 
     # (3-1) 보고서를 MongoDB에 저장
     report = {
         "user_id": user_id,
         "report_text": report_text,
-        "created_at": datetime.utcnow()
+        "created_at": datetime.utcnow(),
     }
-    await strategyHistory_collection.insert_one(report)
-    
+    strategyHistory_collection.insert_one(report)
+
     return report
+
 
 @app.get("/")
 def get_reports():
     return {"home"}
+
+
+# 요청 데이터 모델 정의
+class User(BaseModel):
+    name: str
+    age: int
+    email: str
+
+
+@app.post("/users/")
+def create_user(user: User):
+    """MongoDB에 새로운 사용자 추가"""
+    user_data = user.dict()
+    result = users_collection.insert_one(user_data)
+    return {"message": "User created", "user_id": str(result.inserted_id)}
