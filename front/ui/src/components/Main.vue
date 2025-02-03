@@ -79,6 +79,8 @@ export default {
 .main {
   margin-top: 5px;
   padding: 20px;
+  width: 40%;
+  margin: 0 auto;
 }
 .account-list {
   margin-top: 20px;
