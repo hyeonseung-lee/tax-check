@@ -16,7 +16,7 @@ load_dotenv()
 # FastAPI 앱 생성
 app = FastAPI()
 
-llm = ChatOpenAI(model="gpt-4", openai_api_key=os.getenv("OPENAI_API_KEY"))
+llm = ChatOpenAI(model="gpt-4", openai_api_key=os.getenv("OPENAI_API_KEY"), tempertature=0)
 
 # DB Setting
 MONGO_URI = os.getenv("MONGO_URI")
@@ -70,8 +70,11 @@ def serialize_objectid(obj):
 def calc_irp(account_info: List[AccountInfo]):
     total_irp = 0
     total_pb = 0
+    irp_exist = 0
+    pb_exist = 0
     for account in account_info:
         if account.account_category == 'IRP':
+            irp_exist = 1
             for transaction in account.transactions:
                 created_date = transaction.created_date
                 amount = int(transaction.amount)
@@ -80,6 +83,7 @@ def calc_irp(account_info: List[AccountInfo]):
                     total_irp += amount
 
         if account.account_category == '연금저축계좌':
+            pb_exist = 1
             for transaction in account.transactions:
                 created_date = transaction.created_date
                 amount = int(transaction.amount)
@@ -93,7 +97,8 @@ def calc_irp(account_info: List[AccountInfo]):
     # IRP 계좌 최대
     remain_irp = 3000000 - total_irp
 
-    return remain_pb, remain_irp, remain_pb + remain_irp #연금저축계좌 남은납입금액, irp 남은납입금액, 총 남은납입금액
+    # 계좌 존재 여부도 확인인
+    return remain_pb, remain_irp, remain_pb + remain_irp, pb_exist, irp_exist #연금저축계좌 남은납입금액, irp 남은납입금액, 총 남은납입금액
 
 # 현재 금액일 시 세액 공제 얼마 받는지와 최대로 채우면 얼마 받는지
 # 총급여 55,000,000원 이하는 16.5%(최대 1,485,000원), 초과 시 13.2%(최대 1,188,000원) 공제. 
@@ -106,14 +111,16 @@ def calc_irp_tax(remains:float):
 def profit_isa(account_info: List[AccountInfo]):
     total_profit = 0
     isa_category = ''
+    isa_exist = 0
     for account in account_info:
         if account.account_category[:3] == 'ISA':
+            isa_exist = 1
             isa_category = account.account_category[4:]
             total_profit += account.profit
             for transaction in account.transactions:
                 if transaction.is_dividend == 1:
                     total_profit += transaction.amount
-    return total_profit, isa_category
+    return total_profit, isa_category, isa_exist
 
 # ISA 계좌 서민형/일반형 확인 후 얼마큼 나오는지 확인
 def isa_version(total_profit, isa_category):
@@ -179,13 +186,13 @@ def overseas_min_tax(total_profit):
 def generate_report(user_id: str, account_info: List[AccountInfo]):
 
     # 남은 연금저축계좌 납입금액, 남은 irp 납입금액, 남은 전체 납입금액
-    remain_pb, remain_irp, remain_pp = calc_irp(account_info)
+    remain_pb, remain_irp, remain_pp, pb_exist, irp_exist = calc_irp(account_info)
 
     # 지금까지 납입한 연금저축계좌와 irp의 세액 공제 금액
     now_min_pp, now_over_pp = calc_irp_tax(remain_pp)
 
     # ISA 손익통산과 계좌 종류 
-    isa_total_profit, isa_category = profit_isa(account_info)
+    isa_total_profit, isa_category, isa_exist = profit_isa(account_info)
 
     # ISA로 절세한 금액 
     save_tax = isa_version(isa_total_profit, isa_category)
@@ -203,23 +210,30 @@ def generate_report(user_id: str, account_info: List[AccountInfo]):
     계산을 통해 얻은 정보들을 활용하여, 사용자가 편하게 이해할 수 있도록 보고서 형식으로 작성해 줘야 해.
 
     1. 연금저축계좌/IRP
-    최대로 세액 공제를 받기 위해
+    최대로 세액 공제를 받기 위해 우선 연금저축계좌와 IRP 계좌가 있는지 확인.
+    {pb_exist}가 1이면 연금저축계좌가 존재한다.
+    {irp_exist}가 1이면 IRP계좌가 존재한다.
+    0일 경우 존재하지 않으니, 계좌 개설 안내와 함께 납입을 안내한다.
     연금저축계좌에 추가 납입해야 하는 금액: {remain_pb}
     IRP에 추가 납입해야 하는 금액: {remain_irp}
 
     2. ISA 계좌
+    {isa_exist}가 1이면 ISA 계좌가 존재하고 0이면 존재하지 않는다. ISA 계좌의 혜택과 함께 개설을 권유해야 한다.
+    ISA 계좌가 존재하지 않는다면 아래 지금까지 얻은 수익과 절세한 금액은 보고서에 사용하지 않는다.
     ISA 계좌에서 지금까지 얻은 수익: {isa_total_profit},
     ISA 계좌를 사용했기에 절세한 금액: {save_tax}
 
     3. 해외주식 양도소득세 계산
     해외 주식 손익통산한 금액: {overseas_total_profit}
     해외 주식 매도 전략: {overseas_min}
+    해외 주식을 손익통산한 금액이 0일 경우, 아직 해외 주식을 매도하지 않은 것 같지만 연 250만원까지는 수익에 대해 비과세이므로, 250만원까지는 매도해도 된다고 안내해 줘.
 
     이러한 계산을 기반으로 정중하게 보고서를 작성해 줘. 각 계좌별 절세 전략과 함께 길고 친절하게 설명해 줘.
     마크 다운 형식으로 제목이 조금 더 크고 돋보이게 출력해 줘.                                  
     """)
 
-    report_text = (prompt|llm|StrOutputParser()).invoke({"remain_pb":remain_pb, "remain_irp":remain_irp, "isa_total_profit":isa_total_profit, 
+    report_text = (prompt|llm|StrOutputParser()).invoke({"remain_pb":remain_pb, "remain_irp":remain_irp, "isa_total_profit":isa_total_profit,
+                                                         "pb_exist":pb_exist, "irp_exist":irp_exist, "isa_exist":isa_exist, 
                                                          "save_tax": save_tax, "overseas_total_profit":overseas_total_profit, "overseas_min":overseas_min})
 
 
