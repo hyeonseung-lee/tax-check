@@ -11,18 +11,23 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 async def hash_pwd(pwd: str) -> str:
     return pwd_context.hash(pwd)
 
+# # 사용자 로그인 API
+# @router.post("/login")
+# async def login_user(user: UserCreate):
+#     # 사용자가 존재하는지 확인
+#     existing_user = await users_collection.find_one({"username": user.username})
+#     if not existing_user:
+#         raise HTTPException(status_code=400, detail="User not found")
+
+#     # 저장된 해시된 비밀번호와 입력한 비밀번호 비교
+#     if not pwd_context.verify(user.pwd, existing_user["hashed_pwd"]):
+#         raise HTTPException(status_code=400, detail="Incorrect password")
+
+#     return {"message": "User logged in successfully"}
+
 # 사용자 로그인 API
 @router.post("/login")
-async def login_user(user: UserCreate):
-    # 사용자가 존재하는지 확인
-    existing_user = await users_collection.find_one({"username": user.username})
-    if not existing_user:
-        raise HTTPException(status_code=400, detail="User not found")
-
-    # 저장된 해시된 비밀번호와 입력한 비밀번호 비교
-    if not pwd_context.verify(user.pwd, existing_user["hashed_pwd"]):
-        raise HTTPException(status_code=400, detail="Incorrect password")
-
+async def login_user():
     return {"message": "User logged in successfully"}
 
 # 사용자 등록 API
