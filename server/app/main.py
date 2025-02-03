@@ -97,6 +97,7 @@ def calc_irp(account_info: List[AccountInfo]):
     pb_exist = 0
     for account in account_info:
         if account.account_category == 'IRP':
+            irp_exist = 1
             for transaction in account.transactions:
                 created_date = transaction.created_date
                 amount = int(transaction.amount)
@@ -105,6 +106,7 @@ def calc_irp(account_info: List[AccountInfo]):
                     total_irp += amount
 
         if account.account_category == '연금저축계좌':
+            pb_exist = 1
             for transaction in account.transactions:
                 created_date = transaction.created_date
                 amount = int(transaction.amount)
