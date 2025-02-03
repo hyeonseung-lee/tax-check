@@ -22,28 +22,35 @@
         <img src="@/assets/logo.png" alt="메뉴" class="icon-image" />
       </button>
     </div>
+
+    <!-- side bar open button -->
     <div class="side-menu" :class="{ 'side-menu-open': isMenuOpen }">
-      <button class="close-button" @click="toggleMenu">
-        <svg
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.5"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-          aria-hidden="true"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M6 18L18 6M6 6l12 12"
-          ></path>
-        </svg>
-      </button>
-      <div>
+      <!-- X button -->
+      <div class="close-button-container">
+        <button class="close-button" @click="toggleMenu">
+          <svg
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M6 18L18 6M6 6l12 12"
+            ></path>
+          </svg>
+        </button>
+      </div>
+      <!-- side bar -->
+      <div class="list-container">
         <ul>
-          <li><a href="#">메뉴 항목 1</a></li>
-          <li><a href="#">메뉴 항목 2</a></li>
-          <li><a href="#">메뉴 항목 3</a></li>
+          <li>
+            <a href="/main">절세전략 확인하기</a>
+          </li>
+          <li><a href="/list">절세전략 모아보기</a></li>
         </ul>
       </div>
     </div>
@@ -142,9 +149,14 @@ export default {
   text-decoration: none;
   color: #333;
 }
+
+.close-button-container {
+  position: relative;
+}
 .close-button {
-  top: 16px;
-  right: 16px;
+  position: absolute;
+  top: 5px;
+  right: 0px;
   padding-top: 10px;
   padding-right: 10px;
   padding-bottom: 10px;
@@ -157,5 +169,9 @@ export default {
 .close-button svg {
   width: 24px;
   height: 24px;
+}
+
+.list-container {
+  padding-top: 56px;
 }
 </style>
