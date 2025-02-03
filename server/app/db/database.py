@@ -7,6 +7,6 @@ load_dotenv()
 
 MONGO_URI = os.getenv("MONGO_URI")
 client = AsyncIOMotorClient(MONGO_URI, server_api=ServerApi('1'))
-db = client["test_db"]
+db = client["tax-check-db"]
 users_collection = db["users"]
-history_collection = db["strategyHistory"]
+strategyHistory_collection = db["strategyHistory"]
