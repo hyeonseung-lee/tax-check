@@ -28,8 +28,8 @@ app = FastAPI(
 # MongoDB 설정
 MONGO_URI = "mongodb://localhost:27017"
 client = MongoClient(MONGO_URI)
-db = client["tax_saving_app"]
-reports_collection = db["reports"]
+db = client.tax_saving_app
+reports_collection = db.reports
 
 # OpenAI API 설정
 # OPENAI_API_KEY = "your-openai-api-key"
@@ -48,47 +48,43 @@ llm = ChatOpenAI(model="gpt-4", openai_api_key=os.getenv("OPENAI_API_KEY"))
 # DB Setting
 MONGO_URI = os.getenv("MONGO_URI")
 client = MongoClient(MONGO_URI)
-db = client["compass"]
-users_collection = db["users"]
-strategyHistory_collection = db["strategyHistory"]
+db = client.compass
+users_collection = db.users
+strategyHistory_collection = db.strategyHistory
 
 # 데이터 모델 정의
 
-
 class Transactions(BaseModel):
-    created_date: str  # 입출금날짜
-    amount: str  # 거래금액
-    is_dividend: int  # 배당금이면 1, 내가 납입한 거면 0
-
+    created_date: str #입출금날짜
+    amount: float #거래금액
+    is_dividend: int #배당금이면 1, 내가 납입한 거면 0
 
 class Market(BaseModel):
-    created_date: str  # 거래날짜
-    buysell: int  # buy는 1, sell은 0
-    stock_name: str  # 종목명
-    stock_amount: str  # 거래수량
-    stock_price: str  # 거래단가
-    average: str  # 평균단가가
-
+    created_date: str #거래날짜
+    buysell: int #buy는 1, sell은 0
+    stock_name: str #종목명
+    stock_amount: int #거래수량
+    stock_price: float #거래단가
+    average: float #평균단가가
 
 class Stocks(BaseModel):
-    stock_name: str  # 종목명
-    average: str  # 평균단가가 쉼표 넣어서 작성, ex) 2,000,000
-    valuation: str  # 평가금액
-    stock_amount: str  # 보유수량
-
+    stock_name: str #종목명
+    average: float #평균단가
+    valuation: float #평가금액
+    stock_amount: int #보유수량
 
 class AccountInfo(BaseModel):
-    managing: str  # 운용사
-    account_status: int  # 계좌상태
-    account_number: str  # 계좌번호
-    account_category: str  # 계좌종류 (IRP, ISA, 연금저축펀드, 해외주식계좌, 일반계좌)
-    balance: str  # 평가금액
-    purchase: str  # 매수금액
-    profit: str  # 평가손익
-    created_date: str  # 계좌개설일
-    transactions: List[Transactions]  # 입출금
-    market: List[Market]  # 매매내역
-    stocks: List[Stocks]  # 보유종목
+    managing: str #운용사
+    account_status: int #계좌상태
+    account_number: str #계좌번호
+    account_category: str #계좌종류 (IRP, ISA, 연금저축펀드, 해외주식계좌, 일반계좌)
+    balance: float #평가금액
+    purchase: float #매수금액
+    profit: float #평가손익
+    created_date: str #계좌개설일
+    transactions: List[Transactions] #입출금
+    market: List[Market] #매매내역
+    stocks: List[Stocks] #보유종목
 
 
 # class TaxStrategy(BaseModel):
@@ -118,18 +114,18 @@ def calc_irp(account_info: List[AccountInfo]):
     total_irp = 0
     total_pb = 0
     for account in account_info:
-        if account["account_category"] == 'IRP':
-            for transaction in account["transactions"]:
-                created_date = transaction["created_date"]
-                amount = int(transaction["amount"])
+        if account.account_category == 'IRP':
+            for transaction in account.transactions:
+                created_date = transaction.created_date
+                amount = int(transaction.amount)
                 
                 if created_date[:4] == str(int(datetime.today().year)-1):
                     total_irp += amount
 
-        if account["account_category"] == '연금저축계좌':
-            for transaction in account["transactions"]:
-                created_date = transaction["created_date"]
-                amount = int(transaction["amount"])
+        if account.account_category == '연금저축계좌':
+            for transaction in account.transactions:
+                created_date = transaction.created_date
+                amount = int(transaction.amount)
                 
                 if created_date[:4] == str(int(datetime.today().year)-1):
                     total_pb += amount
@@ -154,9 +150,9 @@ def profit_isa(account_info: List[AccountInfo]):
     total_profit = 0
     isa_category = ''
     for account in account_info:
-        if account["account_category"][:3] == 'ISA':
-            isa_category = account["account_category"][4:]
-            total_profit += account["profit"]
+        if account.account_category[:3] == 'ISA':
+            isa_category = account.account_category[4:]
+            total_profit += account.profit
             for transaction in account.get("transactions", []):
                 if transaction.get("is_dividend") == 1:
                     total_profit += transaction.get("amount",0)
@@ -186,14 +182,14 @@ def overseas_profit(account_info: List[AccountInfo]):
     total_profit = 0
     
     for account in account_info:
-        if account["account_category"] == "해외주식계좌":
+        if account.account_category == "해외주식계좌":
             # 매매 수익 계산
-            for market in account["market"]:
-                created_date = market["created_date"]
-                buysell = int(market["buysell"])
-                stock_price = int(market["stock_price"])
-                average = int(market["average"])
-                stock_amount = int(market["stock_amount"])
+            for market in account.market:
+                created_date = market.created_date
+                buysell = int(market.buysell)
+                stock_price = int(market.stock_price)
+                average = int(market.average)
+                stock_amount = int(market.stock_amount)
                 
                 if created_date and buysell == 0:
                     transaction_year = created_date[:4]
@@ -201,10 +197,10 @@ def overseas_profit(account_info: List[AccountInfo]):
                         total_profit += (stock_price - average) * stock_amount
             
             # 배당금 수익 계산
-            for transaction in account["transactions"]:
-                created_date = transaction["created_date"]
-                is_dividend = int(transaction["is_dividend"])
-                amount = int(transaction["amount"])
+            for transaction in account.transactions:
+                created_date = transaction.created_date
+                is_dividend = int(transaction.is_dividend)
+                amount = int(transaction.amount)
                 
                 if created_date and is_dividend == 1:
                     transaction_year = created_date[:4]
