@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from pymongo import MongoClient
+
 # from langchain.embeddings.openai import OpenAIEmbeddings
 # from langchain.vectorstores import Chroma
 # from langchain.chains import RetrievalQA
@@ -79,19 +80,19 @@ reports_collection = db["reports"]
 # def generate_verified_rag_report(user_id: str, account_info: AccountInfo):
 #     """절세 전략을 검색한 후, 세법과 비교하여 검증 후 최종 보고서를 생성"""
 #     account_data = f"계좌번호: {account_info.account_number}, 잔액: {account_info.balance}"
-    
+
 #     # 절세 전략 검색
 #     strategy_info = strategy_qa_chain.run(account_data)
 
 #     # 세법 검증
 #     law_info = law_qa_chain.run(f"다음 절세 전략이 실제 세법에 맞는지 분석해줘: {strategy_info}")
-    
+
 #     # LLM을 이용한 최종 절세 전략 평가
 #     prompt = f"""
 #     사용자의 계좌 정보를 기반으로 절세 전략을 추천해줘.
 #     절세 전략: {strategy_info}
 #     관련 세법 규정: {law_info}
-    
+
 #     위 절세 전략이 세법과 일치하는지 분석하고, 만약 법적 문제가 있다면 수정된 절세 전략을 제시해줘.
 #     """
 #     response = llm([HumanMessage(content=prompt)])
@@ -100,8 +101,9 @@ reports_collection = db["reports"]
 #     # (6) MongoDB에 저장
 #     report = {"user_id": user_id, "account_number": account_info.account_number, "report_text": report_text}
 #     reports_collection.insert_one(report)
-    
+
 #     return {"user_id": user_id, "report": report_text}
+
 
 # # (7) MongoDB에서 저장된 보고서 목록 불러오기
 # @app.get("/reports/{user_id}")
