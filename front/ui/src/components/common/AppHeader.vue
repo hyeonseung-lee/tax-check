@@ -1,15 +1,21 @@
 <template>
   <header class="header">
     <div class="header-content">
-      <button class="menu-button">
-        <img src="@/assets/logo.png" alt="메뉴" class="icon-image" />
+      <button class="menu-button" @click="goToMain">
+        <img src="@/assets/logo2.png" alt="메뉴" class="icon-image" />
       </button>
     </div>
   </header>
 </template>
 
 <script>
-export default {};
+export default {
+  methods: {
+    goToMain() {
+      this.$router.push({ name: "Main" }); // 메인 화면으로 이동
+    },
+  },
+};
 </script>
 
 <style scoped>
@@ -21,6 +27,7 @@ export default {};
   height: 56px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   z-index: 1000;
+  background-color: white;
 }
 
 .header-content {
