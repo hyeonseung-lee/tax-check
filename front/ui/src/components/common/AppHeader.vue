@@ -1,18 +1,65 @@
 <template>
   <header class="header">
     <div class="header-content">
-      <button class="menu-button" @click="goToMain">
-        <img src="@/assets/logo2.png" alt="메뉴" class="icon-image" />
+      <button class="menu-button" @click="toggleMenu">
+        <svg
+          data-slot="icon"
+          fill="none"
+          stroke-width="1.5"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+          ></path>
+        </svg>
       </button>
+      <button class="menu-logo">
+        <img src="@/assets/logo.png" alt="메뉴" class="icon-image" />
+      </button>
+    </div>
+    <div class="side-menu" :class="{ 'side-menu-open': isMenuOpen }">
+      <button class="close-button" @click="toggleMenu">
+        <svg
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M6 18L18 6M6 6l12 12"
+          ></path>
+        </svg>
+      </button>
+      <div>
+        <ul>
+          <li><a href="#">메뉴 항목 1</a></li>
+          <li><a href="#">메뉴 항목 2</a></li>
+          <li><a href="#">메뉴 항목 3</a></li>
+        </ul>
+      </div>
     </div>
   </header>
 </template>
 
 <script>
 export default {
+  data() {
+    return {
+      isMenuOpen: false,
+    };
+  },
   methods: {
-    goToMain() {
-      this.$router.push({ name: "Main" }); // 메인 화면으로 이동
+    toggleMenu() {
+      this.isMenuOpen = !this.isMenuOpen;
     },
   },
 };
@@ -35,8 +82,6 @@ export default {
   justify-content: space-between;
   align-items: center;
   height: 100%;
-  padding: 0 16px;
-  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -53,5 +98,64 @@ export default {
   left: 50%;
   transform: translate(-50%, -50%);
   width: 210px; /* 아이콘 크기 조절 */
+}
+
+.menu-button {
+  width: 40px;
+  padding-left: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center; /* 상하 가운데 정렬 */
+}
+
+/* css for SIDE-MENU */
+.side-menu {
+  position: fixed;
+  top: 0;
+  left: -250px;
+  width: 250px;
+  height: 100%;
+  background-color: #fff;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  transition: left 0.3s ease;
+  z-index: 999;
+}
+
+.side-menu-open {
+  left: 0;
+}
+
+.side-menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.side-menu li {
+  padding: 16px;
+  border-bottom: 1px solid #ddd;
+}
+
+.side-menu a {
+  text-decoration: none;
+  color: #333;
+}
+.close-button {
+  top: 16px;
+  right: 16px;
+  padding-top: 10px;
+  padding-right: 10px;
+  padding-bottom: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+.close-button svg {
+  width: 24px;
+  height: 24px;
 }
 </style>
