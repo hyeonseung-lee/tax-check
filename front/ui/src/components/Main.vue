@@ -68,8 +68,7 @@ export default {
   },
   methods: {
     calculateTax() {
-      // 절세 계산 로직을 여기에 추가
-      alert("절세 계산하기 버튼이 클릭되었습니다!");
+      this.$router.push({ name: "Report" });
     },
   },
 };

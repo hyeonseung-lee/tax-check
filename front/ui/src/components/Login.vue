@@ -3,7 +3,9 @@
     <h1>로그인</h1>
 
     <div class="social-login">
-      <button class="social-button google">금융인증서로 로그인</button>
+      <button class="social-button google" @click="goToMain">
+        금융인증서로 로그인
+      </button>
       <button class="social-button apple">Apple로 로그인</button>
       <button class="social-button kakao">Kakao로 로그인</button>
     </div>
@@ -63,6 +65,11 @@ export default {
     };
 
     return { email, password, rememberMe, handleSubmit };
+  },
+  methods: {
+    goToMain() {
+      this.$router.push({ name: "Main" }); // 메인 화면으로 이동
+    },
   },
 };
 </script>
