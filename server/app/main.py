@@ -1,11 +1,5 @@
 from fastapi import FastAPI
 from pymongo import MongoClient
-
-# from langchain.embeddings.openai import OpenAIEmbeddings
-# from langchain.vectorstores import Chroma
-# from langchain.chains import RetrievalQA
-# from langchain.chat_models import ChatOpenAI
-# from langchain.schema import HumanMessage
 from pydantic import BaseModel
 from typing import List
 from langchain.chat_models import ChatOpenAI
@@ -19,40 +13,19 @@ from datetime import datetime
 load_dotenv()
 
 # FastAPI 앱 생성
-app = FastAPI(
-    title = "Tax Check",
-    version = "1.0",
-    description= "사용자의 절세를 돕는 전략 보고서"
-)
-
-# MongoDB 설정
-MONGO_URI = "mongodb://localhost:27017"
-client = MongoClient(MONGO_URI)
-db = client.tax_saving_app
-reports_collection = db.reports
-
-# OpenAI API 설정
-# OPENAI_API_KEY = "your-openai-api-key"
-# embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
-
-# # 벡터 DB (ChromaDB) 설정 - 절세 전략 & 세법 규정 분리 저장
-# strategy_vector_store = Chroma(persist_directory="./strategy_db", embedding_function=embeddings)
-# law_vector_store = Chroma(persist_directory="./law_db", embedding_function=embeddings)
-
-# strategy_retriever = strategy_vector_store.as_retriever()
-# law_retriever = law_vector_store.as_retriever()
+app = FastAPI()
 
 llm = ChatOpenAI(model="gpt-4", openai_api_key=os.getenv("OPENAI_API_KEY"))
-
 
 # DB Setting
 MONGO_URI = os.getenv("MONGO_URI")
 client = MongoClient(MONGO_URI)
-db = client.compass
-users_collection = db.users
-strategyHistory_collection = db.strategyHistory
+db = client["compass"]
+users_collection = db["users"]
+strategyHistory_collection = db["strategyHistory"]
 
 # 데이터 모델 정의
+
 
 class Transactions(BaseModel):
     created_date: str #입출금날짜
@@ -85,29 +58,6 @@ class AccountInfo(BaseModel):
     transactions: List[Transactions] #입출금
     market: List[Market] #매매내역
     stocks: List[Stocks] #보유종목
-
-
-# class TaxStrategy(BaseModel):
-#     text: str
-
-# class TaxLaw(BaseModel):
-#     text: str
-
-# # (1) 공인인증서를 통한 로그인 (임시 API)
-# @app.post("/login")
-# def login(cert_data: dict):
-#     return {"message": "공인인증서 로그인 성공", "user_id": "sample_user"}
-
-# # (2) 마이데이터 서비스 연동하여 계좌 정보 가져오기 (더미 데이터)
-# @app.get("/accounts/{user_id}")
-# def get_accounts(user_id: str):
-#     return {
-#         "user_id": user_id,
-#         "accounts": [
-#             {"account_number": "123-456-789", "balance": 1000000, "transactions": []},
-#             {"account_number": "987-654-321", "balance": 500000, "transactions": []}
-#         ]
-#     }
 
 # IRP/연금저축펀드 납입금액 계산
 def calc_irp(account_info: List[AccountInfo]):
@@ -153,9 +103,9 @@ def profit_isa(account_info: List[AccountInfo]):
         if account.account_category[:3] == 'ISA':
             isa_category = account.account_category[4:]
             total_profit += account.profit
-            for transaction in account.get("transactions", []):
-                if transaction.get("is_dividend") == 1:
-                    total_profit += transaction.get("amount",0)
+            for transaction in account.transactions:
+                if transaction.is_dividend == 1:
+                    total_profit += transaction.amount
     return total_profit, isa_category
 
 # ISA 계좌 서민형/일반형 확인 후 얼마큼 나오는지 확인
@@ -215,7 +165,6 @@ def overseas_min_tax(total_profit):
         return "손실 중인 종목 매도"
     else:
         return "아직 2,500,000원 미만의 수익이기에에 비과세 한도입니다."
-
     
 
 # (3) LangChain을 사용하여 ChatGPT로 절세 전략 보고서 생성
@@ -238,7 +187,7 @@ def generate_report(user_id: str, account_info: List[AccountInfo]):
     overseas_total_profit = overseas_profit(account_info)
 
     # 해외주식 매도 전략
-    overseas_min_tax = overseas_min_tax(overseas_total_profit)
+    overseas_min = overseas_min_tax(overseas_total_profit)
 
             
 
@@ -257,64 +206,23 @@ def generate_report(user_id: str, account_info: List[AccountInfo]):
 
     3. 해외주식 양도소득세 계산
     해외 주식 손익통산한 금액: {overseas_total_profit}
-    해외 주식 매도 전략: {overseas_min_tax}
+    해외 주식 매도 전략: {overseas_min}
 
     이러한 계산을 기반으로 정중하게 보고서를 작성해 줘. 각 계좌별 절세 전략과 함께 길고 친절하게 설명해 줘.
     마크 다운 형식으로 제목이 조금 더 크고 돋보이게 출력해 줘.                                  
     """)
 
     report_text = (prompt|llm|StrOutputParser()).invoke({"remain_pb":remain_pb, "remain_irp":remain_irp, "isa_total_profit":isa_total_profit, 
-                                                         "save_tax": save_tax, "overseas_total_profit":overseas_total_profit, "overseas_min_tax":overseas_min_tax})
+                                                         "save_tax": save_tax, "overseas_total_profit":overseas_total_profit, "overseas_min":overseas_min})
 
 
     # (3-1) 보고서를 MongoDB에 저장
-    report = {"user_id": user_id, "report_text": report_text}
-    # reports_collection.insert_one(report)
+    report = {"user_id": user_id, "report_text": report_text, "created_at": datetime.utcnow()}
+    strategyHistory_collection.insert_one(report)
     
     return {"user_id": user_id, "report": report_text}
 
-# # (4) RAG에 세법 규정 추가
-# @app.post("/add_tax_law")
-# def add_tax_law(law: TaxLaw):
-#     """새로운 세법 규정을 벡터 DB에 추가"""
-#     law_vector_store.add_texts([law.text])
-#     return {"message": "세법 규정이 성공적으로 추가되었습니다."}
 
-# # (5) Modular RAG 기반 절세 전략 보고서 생성 (세법 검증 포함)
-# @app.post("/generate_verified_rag_report")
-# def generate_verified_rag_report(user_id: str, account_info: AccountInfo):
-#     """절세 전략을 검색한 후, 세법과 비교하여 검증 후 최종 보고서를 생성"""
-#     account_data = f"계좌번호: {account_info.account_number}, 잔액: {account_info.balance}"
-
-#     # 절세 전략 검색
-#     strategy_info = strategy_qa_chain.run(account_data)
-
-#     # 세법 검증
-#     law_info = law_qa_chain.run(f"다음 절세 전략이 실제 세법에 맞는지 분석해줘: {strategy_info}")
-
-#     # LLM을 이용한 최종 절세 전략 평가
-#     prompt = f"""
-#     사용자의 계좌 정보를 기반으로 절세 전략을 추천해줘.
-#     절세 전략: {strategy_info}
-#     관련 세법 규정: {law_info}
-
-#     위 절세 전략이 세법과 일치하는지 분석하고, 만약 법적 문제가 있다면 수정된 절세 전략을 제시해줘.
-#     """
-#     response = llm([HumanMessage(content=prompt)])
-#     report_text = response.content
-
-#     # (6) MongoDB에 저장
-#     report = {"user_id": user_id, "account_number": account_info.account_number, "report_text": report_text}
-#     reports_collection.insert_one(report)
-
-#     return {"user_id": user_id, "report": report_text}
-
-
-# # (7) MongoDB에서 저장된 보고서 목록 불러오기
-# @app.get("/reports/{user_id}")
-# def get_reports(user_id: str):
-#     reports = list(reports_collection.find({"user_id": user_id}, {"_id": 0}))
-#     return {"user_id": user_id, "reports": reports}
 @app.get("/")
 def get_reports():
     return {"home"}
