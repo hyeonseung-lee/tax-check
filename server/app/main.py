@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from pymongo import MongoClient
 from pydantic import BaseModel
 from typing import List
+from bson import ObjectId
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate, ChatPromptTemplate
 from langchain.chains import RetrievalQA, LLMChain
@@ -58,6 +59,12 @@ class AccountInfo(BaseModel):
     transactions: List[Transactions] #입출금
     market: List[Market] #매매내역
     stocks: List[Stocks] #보유종목
+    
+# ObjectId를 문자열로 변환하는 함수
+def serialize_objectid(obj):
+    if isinstance(obj, ObjectId):
+        return str(obj)
+    return obj
 
 # IRP/연금저축펀드 납입금액 계산
 def calc_irp(account_info: List[AccountInfo]):
@@ -168,7 +175,7 @@ def overseas_min_tax(total_profit):
     
 
 # (3) LangChain을 사용하여 ChatGPT로 절세 전략 보고서 생성
-@app.post("/generate_report")
+@app.post("/report/create")
 def generate_report(user_id: str, account_info: List[AccountInfo]):
 
     # 남은 연금저축계좌 납입금액, 남은 irp 납입금액, 남은 전체 납입금액
@@ -222,6 +229,24 @@ def generate_report(user_id: str, account_info: List[AccountInfo]):
     
     return {"user_id": user_id, "report": report_text}
 
+@app.get("/reports/all")
+def get_all_reports():
+    reports = list(strategyHistory_collection.find())
+    reports = [ {**report, "_id": serialize_objectid(report["_id"])} for report in reports ]
+    return {"reports": reports}
+
+@app.get("/reports/get/{report_id}")
+def get_all_reports(report_id: str):
+    # ObjectId로 변환
+    report_id = ObjectId(report_id)
+
+    # MongoDB에서 해당 report 찾기
+    report = strategyHistory_collection.find_one({"_id": report_id})
+
+    # 반환할 때 _id를 문자열로 변환
+    report["_id"] = serialize_objectid(report["_id"])
+    
+    return {"report": report}
 
 @app.get("/")
 def get_reports():
