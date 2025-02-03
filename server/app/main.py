@@ -18,7 +18,11 @@ import os
 load_dotenv()
 
 # FastAPI 앱 생성
-app = FastAPI()
+app = FastAPI(
+    title = "Tax Check",
+    version = "1.0",
+    description= "사용자의 절세를 돕는 전략 보고서"
+)
 
 # MongoDB 설정
 MONGO_URI = "mongodb://localhost:27017"
@@ -97,7 +101,7 @@ class AccountInfo(BaseModel):
 
 # (3) LangChain을 사용하여 ChatGPT로 절세 전략 보고서 생성
 @app.post("/generate_report")
-def generate_report(user_id: str, account_info: AccountInfo):
+def generate_report(user_id: str, account_info: List[AccountInfo]):
     prompt = ChatPromptTemplate.from_template("""
     너는 대한민국의 증권 계좌를 통한 절세 도우미야. 네가 할 일은 계좌 정보를 확인하여, 각 계좌 정보에 맞는 세액 공제 및 절세 전략을 추천해 줘야 해.
 
@@ -152,8 +156,7 @@ def generate_report(user_id: str, account_info: AccountInfo):
         보고서 형식으로 친절하게 대답해 줘.
         사용자의 계좌 정보: {account-info-list}
     """)
-    response = (prompt|llm|StrOutputParser())
-    report_text = response.content
+    report_text = (prompt|llm|StrOutputParser()).invoke({"account-info-list":account_info})
 
     # (3-1) 보고서를 MongoDB에 저장
     report = {"user_id": user_id, "report_text": report_text}
