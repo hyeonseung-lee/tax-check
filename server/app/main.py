@@ -11,6 +11,7 @@ from bson import ObjectId
 from .db.database import get_db, strategyHistory_collection
 from pydantic import BaseModel
 from typing import List
+from bson import ObjectId
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate, ChatPromptTemplate
 from langchain.chains import RetrievalQA, LLMChain
@@ -43,62 +44,42 @@ llm = ChatOpenAI(model="gpt-4", openai_api_key=os.getenv("OPENAI_API_KEY"))
 
 
 class Transactions(BaseModel):
-    created_date: str  # 입출금날짜
-    amount: str  # 거래금액
-    is_dividend: int  # 배당금이면 1, 내가 납입한 거면 0
-
+    created_date: str #입출금날짜
+    amount: float #거래금액
+    is_dividend: int #배당금이면 1, 내가 납입한 거면 0
 
 class Market(BaseModel):
-    created_date: str  # 거래날짜
-    buysell: int  # buy는 1, sell은 0
-    stock_name: str  # 종목명
-    stock_amount: str  # 거래수량
-    stock_price: str  # 거래단가
-    average: str  # 평균단가가
-
+    created_date: str #거래날짜
+    buysell: int #buy는 1, sell은 0
+    stock_name: str #종목명
+    stock_amount: int #거래수량
+    stock_price: float #거래단가
+    average: float #평균단가가
 
 class Stocks(BaseModel):
-    stock_name: str  # 종목명
-    average: str  # 평균단가가 쉼표 넣어서 작성, ex) 2,000,000
-    valuation: str  # 평가금액
-    stock_amount: str  # 보유수량
-
+    stock_name: str #종목명
+    average: float #평균단가
+    valuation: float #평가금액
+    stock_amount: int #보유수량
 
 class AccountInfo(BaseModel):
-    managing: str  # 운용사
-    account_status: int  # 계좌상태
-    account_number: str  # 계좌번호
-    account_category: str  # 계좌종류 (IRP, ISA, 연금저축펀드, 해외주식계좌, 일반계좌)
-    balance: str  # 평가금액
-    purchase: str  # 매수금액
-    profit: str  # 평가손익
-    created_date: str  # 계좌개설일
-    transactions: List[Transactions]  # 입출금
-    market: List[Market]  # 매매내역
-    stocks: List[Stocks]  # 보유종목
-
-
-# class TaxStrategy(BaseModel):
-#     text: str
-
-# class TaxLaw(BaseModel):
-#     text: str
-
-# # (1) 공인인증서를 통한 로그인 (임시 API)
-# @app.post("/login")
-# def login(cert_data: dict):
-#     return {"message": "공인인증서 로그인 성공", "user_id": "sample_user"}
-
-# # (2) 마이데이터 서비스 연동하여 계좌 정보 가져오기 (더미 데이터)
-# @app.get("/accounts/{user_id}")
-# def get_accounts(user_id: str):
-#     return {
-#         "user_id": user_id,
-#         "accounts": [
-#             {"account_number": "123-456-789", "balance": 1000000, "transactions": []},
-#             {"account_number": "987-654-321", "balance": 500000, "transactions": []}
-#         ]
-#     }
+    managing: str #운용사
+    account_status: int #계좌상태
+    account_number: str #계좌번호
+    account_category: str #계좌종류 (IRP, ISA, 연금저축펀드, 해외주식계좌, 일반계좌)
+    balance: float #평가금액
+    purchase: float #매수금액
+    profit: float #평가손익
+    created_date: str #계좌개설일
+    transactions: List[Transactions] #입출금
+    market: List[Market] #매매내역
+    stocks: List[Stocks] #보유종목
+    
+# ObjectId를 문자열로 변환하는 함수
+def serialize_objectid(obj):
+    if isinstance(obj, ObjectId):
+        return str(obj)
+    return obj
 
 
 # IRP/연금저축펀드 납입금액 계산
@@ -186,7 +167,7 @@ def overseas_profit(account_info: List[AccountInfo]):
     total_profit = 0
 
     for account in account_info:
-        if account["account_category"] == "해외주식계좌":
+        if account.account_category == "해외주식계좌":
             # 매매 수익 계산
             for market in account["market"]:
                 created_date = market["created_date"]
@@ -220,12 +201,10 @@ def overseas_min_tax(total_profit):
         return "손실 중인 종목 매도"
     else:
         return "아직 2,500,000원 미만의 수익이기에에 비과세 한도입니다."
-
-
+      
 # (3) LangChain을 사용하여 ChatGPT로 절세 전략 보고서 생성
 @app.post("/generate_report")
 def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(get_db)):
-
     # 남은 연금저축계좌 납입금액, 남은 irp 납입금액, 남은 전체 납입금액
     remain_pb, remain_irp, remain_pp = calc_irp(account_info)
 
@@ -242,7 +221,7 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
     overseas_total_profit = overseas_profit(account_info)
 
     # 해외주식 매도 전략
-    overseas_min_tax = overseas_min_tax(overseas_total_profit)
+    overseas_min = overseas_min_tax(overseas_total_profit)
 
     prompt = ChatPromptTemplate.from_template(
         """
@@ -260,7 +239,7 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
 
     3. 해외주식 양도소득세 계산
     해외 주식 손익통산한 금액: {overseas_total_profit}
-    해외 주식 매도 전략: {overseas_min_tax}
+    해외 주식 매도 전략: {overseas_min}
 
     이러한 계산을 기반으로 정중하게 보고서를 작성해 줘. 각 계좌별 절세 전략과 함께 길고 친절하게 설명해 줘.
     마크 다운 형식으로 제목이 조금 더 크고 돋보이게 출력해 줘.                                  
@@ -300,9 +279,6 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
 
 #     # 절세 전략 검색
 #     strategy_info = strategy_qa_chain.run(account_data)
-
-#     # 세법 검증
-#     law_info = law_qa_chain.run(f"다음 절세 전략이 실제 세법에 맞는지 분석해줘: {strategy_info}")
 
 #     # LLM을 이용한 최종 절세 전략 평가
 #     prompt = f"""
