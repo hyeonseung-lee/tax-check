@@ -44,39 +44,52 @@ reports_collection = db["reports"]
 
 llm = ChatOpenAI(model="gpt-4", openai_api_key=os.getenv("OPENAI_API_KEY"))
 
+
+# DB Setting
+MONGO_URI = os.getenv("MONGO_URI")
+client = MongoClient(MONGO_URI)
+db = client["compass"]
+users_collection = db["users"]
+strategyHistory_collection = db["strategyHistory"]
+
 # 데이터 모델 정의
 
+
 class Transactions(BaseModel):
-    created_date: str #입출금날짜
-    amount: str #거래금액
-    is_dividend: int #배당금이면 1, 내가 납입한 거면 0
+    created_date: str  # 입출금날짜
+    amount: str  # 거래금액
+    is_dividend: int  # 배당금이면 1, 내가 납입한 거면 0
+
 
 class Market(BaseModel):
-    created_date: str #거래날짜
-    buysell: int #buy는 1, sell은 0
-    stock_name: str #종목명
-    stock_amount: str #거래수량
-    stock_price: str #거래단가
-    average: str #평균단가가
+    created_date: str  # 거래날짜
+    buysell: int  # buy는 1, sell은 0
+    stock_name: str  # 종목명
+    stock_amount: str  # 거래수량
+    stock_price: str  # 거래단가
+    average: str  # 평균단가가
+
 
 class Stocks(BaseModel):
-    stock_name: str #종목명
-    average: str #평균단가가 쉼표 넣어서 작성, ex) 2,000,000
-    valuation: str #평가금액
-    stock_amount: str #보유수량
+    stock_name: str  # 종목명
+    average: str  # 평균단가가 쉼표 넣어서 작성, ex) 2,000,000
+    valuation: str  # 평가금액
+    stock_amount: str  # 보유수량
+
 
 class AccountInfo(BaseModel):
-    managing: str #운용사
-    account_status: int #계좌상태
-    account_number: str #계좌번호
-    account_category: str #계좌종류 (IRP, ISA, 연금저축펀드, 해외주식계좌, 일반계좌)
-    balance: str #평가금액
-    purchase: str #매수금액
-    profit: str #평가손익
-    created_date: str #계좌개설일
-    transactions: List[Transactions] #입출금
-    market: List[Market] #매매내역
-    stocks: List[Stocks] #보유종목
+    managing: str  # 운용사
+    account_status: int  # 계좌상태
+    account_number: str  # 계좌번호
+    account_category: str  # 계좌종류 (IRP, ISA, 연금저축펀드, 해외주식계좌, 일반계좌)
+    balance: str  # 평가금액
+    purchase: str  # 매수금액
+    profit: str  # 평가손익
+    created_date: str  # 계좌개설일
+    transactions: List[Transactions]  # 입출금
+    market: List[Market]  # 매매내역
+    stocks: List[Stocks]  # 보유종목
+
 
 # class TaxStrategy(BaseModel):
 #     text: str
