@@ -118,7 +118,7 @@ def calc_irp(account_info: List[AccountInfo]):
     # IRP 계좌 최대
     remain_irp = 3000000 - total_irp
 
-    return remain_pb, remain_irp, remain_pb + remain_irp #연금저축계좌 남은납입금액, irp 남은납입금액, 총 남은납입금액
+    return remain_pb, remain_irp, remain_pb + remain_irp, pb_exist, irp_exist #연금저축계좌 남은납입금액, irp 남은납입금액, 총 남은납입금액
 
 # 현재 금액일 시 세액 공제 얼마 받는지와 최대로 채우면 얼마 받는지
 # 총급여 55,000,000원 이하는 16.5%(최대 1,485,000원), 초과 시 13.2%(최대 1,188,000원) 공제.
@@ -135,15 +135,17 @@ def calc_irp_tax(remains: float):
 # ISA 계좌 총 수익 통산
 def profit_isa(account_info: List[AccountInfo]):
     total_profit = 0
+    isa_exist = 0
     isa_category = ''
     for account in account_info:
         if account.account_category[:3] == 'ISA':
+            isa_exist = 1
             isa_category = account.account_category[4:]
             total_profit += account.profit
             for transaction in account.transactions:
                 if transaction.is_dividend == 1:
                     total_profit += transaction.amount
-    return total_profit, isa_category
+    return total_profit, isa_category, isa_exist
 
 
 # ISA 계좌 서민형/일반형 확인 후 얼마큼 나오는지 확인
@@ -216,7 +218,7 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
     now_min_pp, now_over_pp = calc_irp_tax(remain_pp)
 
     # ISA 손익통산과 계좌 종류 
-    isa_total_profit, isa_category = profit_isa(account_info)
+    isa_total_profit, isa_category, isa_exist = profit_isa(account_info)
 
     # ISA로 절세한 금액
     save_tax = isa_version(isa_total_profit, isa_category)
@@ -257,6 +259,7 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
     )
 
     report_text = (prompt|llm|StrOutputParser()).invoke({"remain_pb":remain_pb, "remain_irp":remain_irp, "isa_total_profit":isa_total_profit, 
+                                                         "pb_exist":pb_exist, "irp_exist":irp_exist, "isa_exist":isa_exist,
                                                          "save_tax": save_tax, "overseas_total_profit":overseas_total_profit, "overseas_min":overseas_min})
 
 
