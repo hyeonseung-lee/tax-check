@@ -10,15 +10,15 @@
     <div class="content">
       <div class="profit-content">
         <span>총 평가 손익:</span>
-        <span>{{ account.totalProfitLoss }} 원</span>
+        <span>{{ formatCurrency(account.totalProfitLoss) }} 원</span>
       </div>
       <div class="profit-content">
         <span>총 매입입 손익:</span>
-        <span>{{ account.totalPurchaseAmount }} 원</span>
+        <span>{{ formatCurrency(account.totalPurchaseAmount) }} 원</span>
       </div>
       <div class="profit-content">
         <span>총 평가 손익:</span>
-        <span>{{ account.totalEvaluationAmount }} 원</span>
+        <span>{{ formatCurrency(account.totalEvaluationAmount) }} 원</span>
       </div>
     </div>
     <div v-if="isExpanded" class="details">
@@ -28,7 +28,7 @@
         <li v-for="(item, index) in account.items" :key="index">
           <div class="stocks-content">
             <span>{{ item.name }}</span>
-            <span>{{ item.value }} 원</span>
+            <span>{{ formatCurrency(item.value) }} 원</span>
           </div>
         </li>
       </ul>
@@ -53,6 +53,9 @@ export default {
   methods: {
     toggleExpand() {
       this.isExpanded = !this.isExpanded; // 상태 토글
+    },
+    formatCurrency(value) {
+      return new Intl.NumberFormat("ko-KR").format(value);
     },
   },
 };
@@ -101,5 +104,6 @@ export default {
   justify-content: space-between; /* 양쪽 끝으로 정렬 */
   width: 95%; /* 전체 너비 사용 */
   margin-left: 10px;
+  margin-bottom: 5px;
 }
 </style>

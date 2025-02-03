@@ -1,10 +1,11 @@
 <template>
   <div class="main">
-    <AssetStatus :assets="assets" />
+    <h2 class="account-title">내 자산 평가</h2>
+    <div class="divider"></div>
+    <FinanceSummary />
     <div class="account-list">
       <h2 class="account-title">내 계좌 목록</h2>
       <div class="divider"></div>
-      <!-- 줄 추가 -->
       <AccountCard
         v-for="(account, index) in accounts"
         :key="index"
@@ -16,14 +17,14 @@
 </template>
 
 <script>
-import AssetStatus from "./AssetStatus.vue"; // 자산 현황 컴포넌트
 import AccountCard from "./AccountCard.vue"; // 계좌 카드 컴포넌트
+import FinanceSummary from "./FinanceSummary.vue";
 
 export default {
   name: "MainPage",
   components: {
-    AssetStatus,
     AccountCard,
+    FinanceSummary,
   },
   data() {
     return {
@@ -81,6 +82,7 @@ export default {
 }
 .account-list {
   margin-top: 20px;
+  background-color: white;
 }
 .account-title {
   text-align: left; /* 좌측 정렬 */
@@ -89,7 +91,7 @@ export default {
 }
 .divider {
   height: 2px; /* 줄의 두께 */
-  background-color: #ccc; /* 줄 색상 */
+  background-color: #ed6d1e; /* 줄 색상 */
   margin: 10px 0; /* 위 아래 여백 */
 }
 .tax-calculator {
@@ -98,7 +100,7 @@ export default {
   left: 50%; /* 왼쪽에서의 위치 */
   transform: translate(-50%, -50%); /* 버튼을 중앙으로 이동 */
   padding: 10px 20px;
-  background-color: #007bff; /* 버튼 색상 */
+  background-color: #ed6d1e; /* 버튼 색상 */
   color: white; /* 글자 색상 */
   border: none; /* 테두리 없음 */
   border-radius: 5px; /* 모서리 둥글게 */
