@@ -8,12 +8,11 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
-    "@vue-styled-components/core": "^1.9.0",
+    "@mdi/font": "^7.4.47",
     "core-js": "^3.8.3",
     "quasar": "^2.17.7",
     "vue": "^3.2.13",
-    "vue-router": "^4.5.0",
-    "vuetify": "^3.7.9"
+    "vue-router": "^4.5.0"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",
@@ -27,7 +26,8 @@
     "postcss": "^8.5.1",
     "sass": "^1.83.4",
     "sass-loader": "^16.0.4",
-    "tailwindcss": "^4.0.3"
+    "vite-plugin-vuetify": "^2.0.4",
+    "vuetify": "^3.7.9"
   },
   "eslintConfig": {
     "root": true,
