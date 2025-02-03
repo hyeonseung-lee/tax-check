@@ -43,9 +43,9 @@ llm = ChatOpenAI(model="gpt-4", openai_api_key=os.getenv("OPENAI_API_KEY"))
 # DB Setting
 MONGO_URI = os.getenv("MONGO_URI")
 client = MongoClient(MONGO_URI)
-db = client["compass"]
-users_collection = db["users"]
-strategyHistory_collection = db["strategyHistory"]
+db = client.compass
+users_collection = db.users
+strategyHistory_collection = db.strategyHistory
 
 # 데이터 모델 정의
 
@@ -177,12 +177,12 @@ def overseas_profit(account_info: List[AccountInfo]):
     for account in account_info:
         if account.account_category == "해외주식계좌":
             # 매매 수익 계산
-            for market in account["market"]:
-                created_date = market["created_date"]
-                buysell = int(market["buysell"])
-                stock_price = int(market["stock_price"])
-                average = int(market["average"])
-                stock_amount = int(market["stock_amount"])
+            for market in account.market:
+                created_date = market.created_date
+                buysell = int(market.buysell)
+                stock_price = int(market.stock_price)
+                average = int(market.average)
+                stock_amount = int(market.stock_amount)
 
                 if created_date and buysell == 0:
                     transaction_year = created_date[:4]
@@ -190,10 +190,10 @@ def overseas_profit(account_info: List[AccountInfo]):
                         total_profit += (stock_price - average) * stock_amount
 
             # 배당금 수익 계산
-            for transaction in account["transactions"]:
-                created_date = transaction["created_date"]
-                is_dividend = int(transaction["is_dividend"])
-                amount = int(transaction["amount"])
+            for transaction in account.transactions:
+                created_date = transaction.created_date
+                is_dividend = int(transaction.is_dividend)
+                amount = int(transaction.amount)
 
                 if created_date and is_dividend == 1:
                     transaction_year = created_date[:4]
@@ -309,7 +309,7 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
 # # (7) MongoDB에서 저장된 보고서 목록 불러오기
 @app.get("/")
 async def get_reports(db=Depends(get_db)):
-    history = await db["strategyHistory"].find({}, {"_id": 0}).to_list(100)
+    history = await db.strategyHistory.find({}, {"_id": 0}).to_list(100)
     return {"history": history}
 
 
@@ -318,6 +318,6 @@ async def get_reports(db=Depends(get_db)):
 async def get_report_detail(id: str, db=Depends(get_db)):
     object_id = ObjectId(id)
     history = (
-        await db["strategyHistory"].find({"_id": object_id}, {"_id": 0}).to_list(100)
+        await db.strategyHistory.find({"_id": object_id}, {"_id": 0}).to_list(100)
     )
     return history
