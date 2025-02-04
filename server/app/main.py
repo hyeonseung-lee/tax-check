@@ -383,9 +383,14 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
 
 
 # # (7) MongoDB에서 저장된 보고서 목록 불러오기
+
 @app.get("/")
 async def get_reports(db=Depends(get_db)):
-    history = await db.strategyHistory.find({}, {"_id": 0}).to_list(100)
+   # _id를 포함시키고, _id를 str로 변환하여 반환
+    history_list = await db.strategyHistory.find().to_list(100)
+    history = [
+        {**history, "_id": serialize_objectid(history["_id"])} for history in history_list
+    ]
     return {"history": history}
 
 
@@ -393,5 +398,5 @@ async def get_reports(db=Depends(get_db)):
 @app.get("/{id}")
 async def get_report_detail(id: str, db=Depends(get_db)):
     object_id = ObjectId(id)
-    history = await db.strategyHistory.find({"_id": object_id}, {"_id": 0}).to_list(100)
+    history = await db.strategyHistory.find({"_id": object_id}).to_list(100)
     return history
