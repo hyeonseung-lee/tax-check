@@ -135,15 +135,41 @@ def calc_irp_tax(remains: float):
     ) * 0.165  # 5500만원 이하하인 경우 현재 납입 금액에서 받는 세액 공제
     return now_min_pp, now_over_pp
 
+#최대 IRP/연금저축 절세 가능 금액 (나중에 수정하기 용이하게게)
+def max_pb_irp():
+    return 9000000 * 0.165, 9000000 * 0.132 # 5500만원 이하, 5500만원 이상
+
 # 전체 증권 계좌 평가금액의 합
+def all_balance(account_info: List[AccountInfo]):
+    total_balance = 0
+    for account in account_info:
+        total_balance += account.balance
 
-# ISA, IRP, 연금저축계좌별 정보 요약
-# 총 납입금액
-# 총 절세 가능 금액 
+    return total_balance
 
+# 연금저축 현재 평가금액
+def pb_balance(account_info: List[AccountInfo]):
+    total_pb = 0
+    for account in account_info:
+        if account.account_category == "연금저축계좌":
+            total_pb += account.balance
+    return total_pb
 
+# IRP 현재 평가금액
+def irp_balance(account_info: List[AccountInfo]):
+    for account in account_info:
+        if account.account_category == "IRP":
+            return account.balance #IRP는 하나밖에 개설이 안 됨됨
 
-# ISA 계좌 총 수익 통산
+# ISA 현재 평가금액
+def isa_balance(account_info: List[AccountInfo]):
+    total_pb = 0
+    for account in account_info:
+        if account.account_category[:4] == "ISA":
+            total_pb += account.balance
+    return total_pb
+
+# ISA 계좌 배당 수익 통산
 def profit_isa(account_info: List[AccountInfo]):
     total_profit = 0
     isa_exist = 0
@@ -152,7 +178,6 @@ def profit_isa(account_info: List[AccountInfo]):
         if account.account_category[:3] == "ISA":
             isa_exist = 1
             isa_category = account.account_category[4:]
-            total_profit += account.profit
             for transaction in account.transactions:
                 if transaction.is_dividend == 1:
                     total_profit += transaction.amount
@@ -211,6 +236,37 @@ def overseas_profit(account_info: List[AccountInfo]):
 
     return total_profit
 
+# 해외주식 현재 양도소득세 계산 (매도 시 아낄 수 있는 금액)
+def overseas_gain_tax(total_profit):
+    now_tax = (total_profit - 2500000) * 0.22 # 현재 내야 하는 금액
+    return now_tax
+
+# 총 절세 가능 금액 
+def cut_tax(now_min_pp, now_over_pp, save_tax, now_tax):
+    # 연금저축/IRP 지금까지 납입한 걸로 받는 세액 공제
+    now_over_pp
+    now_min_pp
+
+    # 연금저축/IRP 최대 세액 공제
+    min_under_pp, max_over_pp = max_pb_irp()
+
+    # ISA로 지금까지 받은 배당금 세액 공제
+    save_tax
+
+    # 지금 상태로 내야 하는 해외주식 양도 소득세
+    now_tax 
+
+    # 최대로 받을 수 있는 절세
+    # 최대 IRP/연금저축 + 지금까지 ISA + 절세해야 할 양도소득세
+    my_under_max = min_under_pp + save_tax + now_tax
+    my_over_max = max_over_pp + save_tax + now_tax
+
+    # 지금까지 받은 절세
+    # 지금까지 IRP/연금저축 + 지금까찌 ISA
+    my_under_now = now_min_pp + save_tax + now_tax
+    my_over_now = now_over_pp + save_tax + now_tax
+
+    return my_under_max, my_over_max, my_under_now, my_over_now
 
 # 해외주식 매도 전략
 def overseas_min_tax(total_profit):
@@ -243,10 +299,36 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
     # 해외주식 매도 전략
     overseas_min = overseas_min_tax(overseas_total_profit)
 
+    # 전체 계좌 현재 평가금액
+    total_balance = all_balance(account_info)
+
+    # 연금저축 현재 평가금액
+    total_pb = pb_balance(account_info)
+
+    # IRP 현재 평가금액
+    irp_bal =  irp_balance(account_info)
+
+    # ISA 현재 평가금액
+    isa_bal = isa_balance(account_info)
+
+    # 지금 기준으로 내야 되는 해외주식 양도 소득세
+    now_overseas_tax = overseas_gain_tax(overseas_total_profit)
+
+    # 총 절세 가능 금액 
+    my_under_max, my_over_max, my_under_now, my_over_now = cut_tax(now_min_pp, now_over_pp, save_tax, now_overseas_tax)
+
+
+    # 프롬프트 조립
     prompt = ChatPromptTemplate.from_template(
-        """
+    """
     너는 친절한 대한민국의 증권 계좌를 통한 절세 도우미야.
     계산을 통해 얻은 정보들을 활용하여, 사용자가 편하게  이해할 수 있도록 보고서 형식으로 작성해 줘야 해.
+
+    0. 지금 현재 사용자의 재산
+    전체 증권 계좌 평가금액 합: {total_balance}
+    연금저축계좌 평가금액 합: {total_pb}
+    IRP 평가금액: {irp_bal}
+    ISA 평가금액: {isa_bal}
 
     1. 연금저축계좌/IRP
     최대로 세액 공제를 받기 위해 우선 연금저축계좌와 IRP 계좌가 있는지 확인.
@@ -262,12 +344,22 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
     {isa_exist}가 1이면 ISA 계좌가 존재하고 0이면 존재하지 않는다.
     ISA 계좌가 존재하지 않을 경우, ISA 계좌의 혜택과 함께 개설을 권유해야 한다.
     ISA 계좌가 존재하지 않는다면 아래 지금까지 얻은 수익과 절세한 금액은 보고서에 사용하지 않는다.
-    ISA 계좌에서 지금까지 얻은 수익: {isa_total_profit},
-    ISA 계좌를 사용했기에 절세한 금액: {save_tax}
+    ISA 계좌에서 지금까지 얻은 배당 수익: {isa_total_profit},
+    ISA 계좌를 사용했기에 받은 배당금으로 절세한 금액: {save_tax}
 
     3. 해외주식 양도소득세 계산
     해외 주식 손익통산한 금액: {overseas_total_profit}
+    지금 손익 기준으로 내야 하는 양도소득세: {now_overseas_tax}
     해외 주식 매도 전략: {overseas_min}
+
+    4. 총 절세 가능 금액
+    지금까지 IRP/연금저축에 납입한 금액과 ISA 계좌를 통해 절세 받은 금액의 합
+    총급여 5,500만원 이하 : {my_under_now}
+    총급여 5,500만원 이상: {my_over_now}
+
+    앞으로 최대로 받을 수 있는 금액의 합
+    총급여 5,500만원 이하하: {my_under_max}
+    총급여 5,500만원 이상: {my_over_max}
 
     이러한 계산을 기반으로 정중하게 보고서를 작성해 줘. 각 계좌별 절세 전략과 함께 길고 친절하게 설명해 줘.
     금융 지식을 잘 모르는 사용자도 잘 알 수 있게, 절세 관련 용어는 쉽게 풀거나 예시를 들어 설명해 줘. 
@@ -275,13 +367,14 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
     """
     )
 
-    report_text = (prompt|llm|StrOutputParser()).invoke({"remain_pb":remain_pb, "remain_irp":remain_irp, "isa_total_profit":isa_total_profit, 
-                                                         "pb_exist":pb_exist, "irp_exist":irp_exist, "isa_exist":isa_exist,
-                                                         "save_tax": save_tax, "overseas_total_profit":overseas_total_profit, "overseas_min":overseas_min})
     json_result = {"remain_pb":remain_pb, "remain_irp":remain_irp, "isa_total_profit":isa_total_profit, 
             "pb_exist":pb_exist, "irp_exist":irp_exist, "isa_exist":isa_exist,
-            "save_tax": save_tax, "overseas_total_profit":overseas_total_profit, "overseas_min":overseas_min, "created_at": datetime.utcnow()}
-
+            "save_tax": save_tax, "overseas_total_profit":overseas_total_profit, "overseas_min":overseas_min, 
+            "total_balance":total_balance, "total_pb":total_pb, "irp_bal":irp_bal, "isa_bal":isa_bal,
+            "now_overseas_tax":now_overseas_tax, "my_under_now":my_under_now, "my_over_now":my_over_now, "my_under_max":my_under_max, "my_over_max":my_over_max, 
+            "created_at": datetime.utcnow()}
+    
+    report_text = (prompt|llm|StrOutputParser()).invoke(json_result)
     # (3-1) 보고서를 MongoDB에 저장
     report = {"user_id": user_id, "report_text": report_text, "data_result": json_result}
     strategyHistory_collection.insert_one(report)
