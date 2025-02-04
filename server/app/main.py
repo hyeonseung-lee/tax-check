@@ -425,9 +425,104 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
     return {"user_id": user_id, "report": report_text, "data_result": json_result}
 
 
+@app.post("/login")
+async def login(db=Depends(get_db)):
+    return [
+        {
+        "managing": "삼성증권",
+        "account_status": 1,
+        "account_number": "111-222-333",
+        "account_category": "IRP",
+        "balance": 12500000.0,
+        "purchase": 11000000.0,
+        "profit": 1500000.0,
+        "created_date": "2018-07-12",
+        "transactions": [
+        {"created_date": "2024-01-10", "amount": 1000000.0, "is_dividend": 0},
+        {"created_date": "2024-01-25", "amount": 500000.0, "is_dividend": 1}
+        ],
+        "market": [
+        {"created_date": "2024-01-15", "buysell": 1, "stock_name": "삼성전자", "stock_amount": 20, "stock_price": 70000.0, "average": 68000.0},
+        {"created_date": "2024-01-28", "buysell": 0, "stock_name": "SK하이닉스", "stock_amount": 5, "stock_price": 140000.0, "average": 135000.0}
+        ],
+        "stocks": [
+        {"stock_name": "삼성전자", "average": 68000.0, "valuation": 1400000.0, "stock_amount": 20},
+        {"stock_name": "SK하이닉스", "average": 135000.0, "valuation": 700000.0, "stock_amount": 5}
+        ]
+    },
+    {
+        "managing": "미래에셋증권",
+        "account_status": 1,
+        "account_number": "444-555-666",
+        "account_category": "연금저축계좌",
+        "balance": 9400000.0,
+        "purchase": 9000000.0,
+        "profit": 400000.0,
+        "created_date": "2019-09-05",
+        "transactions": [
+        {"created_date": "2024-01-25", "amount": 500000.0, "is_dividend": 0},
+        {"created_date": "2024-02-02", "amount": 200000.0, "is_dividend": 1}
+        ],
+        "market": [
+        {"created_date": "2024-01-30", "buysell": 1, "stock_name": "NAVER", "stock_amount": 10, "stock_price": 90000.0, "average": 85000.0},
+        {"created_date": "2024-02-03", "buysell": 0, "stock_name": "카카오", "stock_amount": 8, "stock_price": 60000.0, "average": 58000.0}
+        ],
+        "stocks": [
+        {"stock_name": "NAVER", "average": 85000.0, "valuation": 900000.0, "stock_amount": 10},
+        {"stock_name": "카카오", "average": 58000.0, "valuation": 480000.0, "stock_amount": 8}
+        ]
+    },
+    {
+        "managing": "키움증권",
+        "account_status": 1,
+        "account_number": "777-888-999",
+        "account_category": "ISA 서민형",
+        "balance": 12800000.0,
+        "purchase": 7200000.0,
+        "profit": 5600000.0,
+        "created_date": "2020-11-18",
+        "transactions": [
+        {"created_date": "2024-01-15", "amount": 300000.0, "is_dividend": 0},
+        {"created_date": "2024-01-29", "amount": 100000.0, "is_dividend": 1}
+        ],
+        "market": [
+        {"created_date": "2024-01-18", "buysell": 1, "stock_name": "LG에너지솔루션", "stock_amount": 5, "stock_price": 430000.0, "average": 425000.0},
+        {"created_date": "2024-01-29", "buysell": 0, "stock_name": "현대차", "stock_amount": 3, "stock_price": 210000.0, "average": 205000.0}
+        ],
+        "stocks": [
+        {"stock_name": "LG에너지솔루션", "average": 425000.0, "valuation": 2150000.0, "stock_amount": 5},
+        {"stock_name": "현대차", "average": 205000.0, "valuation": 630000.0, "stock_amount": 3}
+        ]
+    },
+    {
+        "managing": "NH투자증권",
+        "account_status": 1,
+        "account_number": "222-333-444",
+        "account_category": "해외주식계좌",
+        "balance": 13500000.0,
+        "purchase": 12700000.0,
+        "profit": 800000.0,
+        "created_date": "2021-06-25",
+        "transactions": [
+        {"created_date": "2024-01-05", "amount": 1500000.0, "is_dividend": 0},
+        {"created_date": "2024-01-20", "amount": 300000.0, "is_dividend": 1}
+        ],
+        "market": [
+        {"created_date": "2024-01-08", "buysell": 1, "stock_name": "애플", "stock_amount": 7, "stock_price": 140000.0, "average": 138000.0},
+        {"created_date": "2024-01-18", "buysell": 0, "stock_name": "테슬라", "stock_amount": 60, "stock_price": 900000.0, "average": 850000.0}
+        ],
+        "stocks": [
+        {"stock_name": "애플", "average": 1380000.0, "valuation": 980000.0, "stock_amount": 7},
+        {"stock_name": "테슬라", "average": 850000.0, "valuation": 2500000.0, "stock_amount": 60}
+        ]
+    }
+    ]
+
+<<<<<<< Updated upstream
+
+=======
 # # (7) MongoDB에서 저장된 보고서 목록 불러오기
-
-
+>>>>>>> Stashed changes
 @app.get("/")
 async def get_reports(db=Depends(get_db)):
     # _id를 포함시키고, _id를 str로 변환하여 반환
