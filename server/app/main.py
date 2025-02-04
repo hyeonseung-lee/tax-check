@@ -27,7 +27,13 @@ origins = [
 app = FastAPI(
     title="Tax Check", version="1.0", description="사용자의 절세를 돕는 전략 보고서"
 )
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 llm = ChatOpenAI(
     model="gpt-4o", openai_api_key=os.getenv("OPENAI_API_KEY"), temperature=0
