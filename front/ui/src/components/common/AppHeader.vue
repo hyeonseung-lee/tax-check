@@ -50,7 +50,7 @@
           <li>
             <a href="/main">절세전략 확인하기</a>
           </li>
-          <li><a href="/list">절세전략 모아보기</a></li>
+          <li><a href="/report-history">절세전략 모아보기</a></li>
         </ul>
       </div>
     </div>
