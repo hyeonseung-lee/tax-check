@@ -25,6 +25,7 @@ export default {
       axios
         .get("http://221.168.39.188:8000/")
         .then((response) => {
+          console.log(response);
           this.history = response.data.history
             .map((item) => {
               // created_at이 존재하는지 검증

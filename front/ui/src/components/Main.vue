@@ -17,6 +17,7 @@
 </template>
 
 <script>
+import axios from "axios"; // axios를 사용하여 API 호출
 import AccountCard from "./AccountCard.vue"; // 계좌 카드 컴포넌트
 import FinanceSummary from "./FinanceSummary.vue";
 
@@ -32,44 +33,35 @@ export default {
         totalValue: 1000000,
         totalProfitLoss: 200000,
       },
-      accounts: [
-        {
-          type: "연금저축펀드",
-          totalProfitLoss: 50000,
-          totalPurchaseAmount: 300000,
-          totalEvaluationAmount: 350000,
-          items: [
-            { name: "종목 A", value: 150000 },
-            { name: "종목 B", value: 200000 },
-          ],
-        },
-        {
-          type: "ISA",
-          totalProfitLoss: -80000,
-          totalPurchaseAmount: 400000,
-          totalEvaluationAmount: 320000,
-          items: [
-            { name: "종목 C", value: 250000 },
-            { name: "종목 D", value: 150000 },
-          ],
-        },
-        {
-          type: "IRP",
-          totalProfitLoss: 30000,
-          totalPurchaseAmount: 200000,
-          totalEvaluationAmount: 230000,
-          items: [
-            { name: "종목 E", value: 100000 },
-            { name: "종목 F", value: 90000 },
-          ],
-        },
-      ],
+      accounts: [], // 초기에는 빈 배열로 설정
     };
   },
   methods: {
+    async fetchAccounts() {
+      try {
+        const response = await axios.post("http://221.168.39.188:8000/login", {
+          // 필요한 로그인 데이터
+        });
+        this.accounts = response.data.map((account) => ({
+          type: account.account_category,
+          totalProfitLoss: account.profit,
+          totalPurchaseAmount: account.purchase,
+          totalEvaluationAmount: account.balance,
+          items: account.stocks.map((stock) => ({
+            name: stock.stock_name,
+            value: stock.valuation,
+          })),
+        }));
+      } catch (error) {
+        console.error("계좌 정보를 가져오는 데 실패했습니다.", error);
+      }
+    },
     calculateTax() {
       this.$router.push({ name: "Report" });
     },
+  },
+  mounted() {
+    this.fetchAccounts(); // 컴포넌트가 마운트될 때 계좌 데이터 가져오기
   },
 };
 </script>

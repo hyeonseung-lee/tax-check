@@ -15,7 +15,7 @@
         >
       </div>
       <div class="profit-content">
-        <span>총 매입입 손익:</span>
+        <span>총 매입:</span>
         <span>{{ formatCurrency(account.totalPurchaseAmount) }} 원</span>
       </div>
       <div class="profit-content">

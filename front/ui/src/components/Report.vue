@@ -21,7 +21,7 @@
     <div></div>
     <div class="AI-container">
       <div class="recommendation" style="border-right: 1px solid #ccc">
-        <h2>AI 추천 종목</h2>
+        <h2>AI 추천 상품</h2>
         <div class="divider"></div>
         <div class="stock-info">
           <h3>{{ stock.name }} {{ stock.price }}원</h3>
@@ -33,7 +33,7 @@
         </div>
       </div>
       <div class="recommendation">
-        <h2>참고 뉴스</h2>
+        <h2>Tax-Check 파트너 세무사</h2>
         <div class="divider"></div>
         <div class="stock-info">
           <h3>{{ news.name }}</h3>
@@ -220,6 +220,7 @@ export default {
 
 .report-content {
   font-size: 1.2rem;
+  text-align: left;
   height: 90%; /* 원하는 높이 설정 */
   overflow-y: auto; /* 세로 방향으로 스크롤 가능 */
   text-overflow: ellipsis; /* 넘치는 텍스트는 생략 표시 */
