@@ -3,7 +3,7 @@
 - FRONT : VUE.js
 - BACK : FAST API
 - DB : MongoDB
-- AI : OPNE AI
+- AI : OPEN AI
 - DEPLOY : KOSCOM FINACIAL CLOUD
 
 # 팀원설명
