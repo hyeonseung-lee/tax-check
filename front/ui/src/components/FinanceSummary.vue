@@ -44,11 +44,11 @@ export default {
   name: "FinanceSummary",
   data() {
     return {
-      totalProfitLoss: -276360,
-      totalPurchase: 13920760,
-      totalValue: 13648520,
+      totalProfitLoss: 8300000,
+      totalPurchase: 39900000,
+      totalValue: 48200000,
       realizedProfitLoss: 0,
-      estimatedAssets: 13648520,
+      estimatedAssets: 48200000,
     };
   },
   computed: {

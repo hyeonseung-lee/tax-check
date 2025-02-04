@@ -145,7 +145,7 @@ export default {
 
               // 그래프 데이터 준비
               this.graphData = {
-                labels: ["5500만원 이하", "5500만원 초과"], // 그래프의 레이블
+                labels: ["(연소득) 5500만원 이하", "(연소득) 5500만원 초과"], // 그래프의 레이블
                 datasets: [
                   {
                     label: "현재 절세액", // 'my_under_now'와 'my_under_max' 비교
