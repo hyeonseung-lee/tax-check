@@ -257,7 +257,10 @@ def overseas_profit(account_info: List[AccountInfo]):
 
 # 해외주식 현재 양도소득세 계산 (매도 시 아낄 수 있는 금액)
 def overseas_gain_tax(total_profit):
-    now_tax = (total_profit - 2500000) * 0.22  # 현재 내야 하는 금액
+    if total_profit > 2500000:
+        now_tax = (total_profit - 2500000) * 0.22  # 현재 내야 하는 금액
+    else:
+        now_tax = 0
     return now_tax
 
 
@@ -523,7 +526,7 @@ async def login(db=Depends(get_db)):
     }
     ]
 # # (7) MongoDB에서 저장된 보고서 목록 불러오기
-@app.get("/")
+@app.get("/list")
 async def get_reports(db=Depends(get_db)):
     # _id를 포함시키고, _id를 str로 변환하여 반환
     history_list = await db.strategyHistory.find({"user_id": "0011"}).to_list(100)
@@ -535,7 +538,7 @@ async def get_reports(db=Depends(get_db)):
 
 
 # # (8) MongoDB에서 저장된 보고서 ID로 상세조회
-@app.get("/{identifier}")
+@app.get("/list/{identifier}")
 def get_report_detail(identifier: str, db=Depends(get_db)):
     history = strategyHistory_collection.find_one(
         {"identifier": identifier}, {"_id": 0}
