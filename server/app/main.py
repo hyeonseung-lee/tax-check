@@ -427,6 +427,7 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
         "report_text": report_text,
         "data_result": json_result,
         "identifier": timestamp,
+        "created_at": datetime.utcnow()
     }
     strategyHistory_collection.insert_one(report)
 
