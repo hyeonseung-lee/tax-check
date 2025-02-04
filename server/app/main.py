@@ -29,7 +29,9 @@ app = FastAPI(
 )
 
 
-llm = ChatOpenAI(model="gpt-4o", openai_api_key=os.getenv("OPENAI_API_KEY"), temperature=0)
+llm = ChatOpenAI(
+    model="gpt-4o", openai_api_key=os.getenv("OPENAI_API_KEY"), temperature=0
+)
 
 # DB Setting
 MONGO_URI = os.getenv("MONGO_URI")
@@ -109,7 +111,7 @@ def calc_irp(account_info: List[AccountInfo]):
                 if created_date[:4] == str(int(datetime.today().year) - 1):
                     total_pb += amount
 
-    # 연금저축계좌 
+    # 연금저축계좌
     year_pb = total_pb
     remain_pb = 6000000 - total_pb
 
@@ -139,9 +141,11 @@ def calc_irp_tax(remains: float):
     ) * 0.165  # 5500만원 이하하인 경우 현재 납입 금액에서 받는 세액 공제
     return now_min_pp, now_over_pp
 
-#최대 IRP/연금저축 절세 가능 금액 (나중에 수정하기 용이하게게)
+
+# 최대 IRP/연금저축 절세 가능 금액 (나중에 수정하기 용이하게게)
 def max_pb_irp():
-    return 9000000 * 0.165, 9000000 * 0.132 # 5500만원 이하, 5500만원 이상
+    return 9000000 * 0.165, 9000000 * 0.132  # 5500만원 이하, 5500만원 이상
+
 
 # 전체 증권 계좌 평가금액의 합
 def all_balance(account_info: List[AccountInfo]):
@@ -151,6 +155,7 @@ def all_balance(account_info: List[AccountInfo]):
 
     return total_balance
 
+
 # 연금저축 현재 평가금액
 def pb_balance(account_info: List[AccountInfo]):
     total_pb = 0
@@ -159,11 +164,13 @@ def pb_balance(account_info: List[AccountInfo]):
             total_pb += account.balance
     return total_pb
 
+
 # IRP 현재 평가금액
 def irp_balance(account_info: List[AccountInfo]):
     for account in account_info:
         if account.account_category == "IRP":
-            return account.balance #IRP는 하나밖에 개설이 안 됨됨
+            return account.balance  # IRP는 하나밖에 개설이 안 됨됨
+
 
 # ISA 현재 평가금액
 def isa_balance(account_info: List[AccountInfo]):
@@ -172,6 +179,7 @@ def isa_balance(account_info: List[AccountInfo]):
         if account.account_category[:4] == "ISA":
             total_pb += account.balance
     return total_pb
+
 
 # ISA 계좌 배당 수익 통산
 def profit_isa(account_info: List[AccountInfo]):
@@ -240,12 +248,14 @@ def overseas_profit(account_info: List[AccountInfo]):
 
     return total_profit
 
+
 # 해외주식 현재 양도소득세 계산 (매도 시 아낄 수 있는 금액)
 def overseas_gain_tax(total_profit):
-    now_tax = (total_profit - 2500000) * 0.22 # 현재 내야 하는 금액
+    now_tax = (total_profit - 2500000) * 0.22  # 현재 내야 하는 금액
     return now_tax
 
-# 총 절세 가능 금액 
+
+# 총 절세 가능 금액
 def cut_tax(now_min_pp, now_over_pp, save_tax, now_tax):
     # 연금저축/IRP 지금까지 납입한 걸로 받는 세액 공제
     now_over_pp
@@ -258,7 +268,7 @@ def cut_tax(now_min_pp, now_over_pp, save_tax, now_tax):
     save_tax
 
     # 지금 상태로 내야 하는 해외주식 양도 소득세
-    now_tax 
+    now_tax
 
     # 최대로 받을 수 있는 절세
     # 최대 IRP/연금저축 + 지금까지 ISA + 절세해야 할 양도소득세
@@ -271,6 +281,7 @@ def cut_tax(now_min_pp, now_over_pp, save_tax, now_tax):
     my_over_now = now_over_pp + save_tax + now_tax
 
     return my_under_max, my_over_max, my_under_now, my_over_now
+
 
 # 해외주식 매도 전략
 def overseas_min_tax(total_profit):
@@ -286,7 +297,9 @@ def overseas_min_tax(total_profit):
 @app.post("/generate_report")
 def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(get_db)):
     # 남은 연금저축계좌 납입금액, 남은 irp 납입금액, 남은 전체 납입금액
-    year_pb, year_irp, remain_pb, remain_irp, remain_pp, pb_exist, irp_exist = calc_irp(account_info)
+    year_pb, year_irp, remain_pb, remain_irp, remain_pp, pb_exist, irp_exist = calc_irp(
+        account_info
+    )
 
     # 지금까지 납입한 연금저축계좌와 irp의 세액 공제 금액
     now_min_pp, now_over_pp = calc_irp_tax(remain_pp)
@@ -310,7 +323,7 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
     total_pb = pb_balance(account_info)
 
     # IRP 현재 평가금액
-    irp_bal =  irp_balance(account_info)
+    irp_bal = irp_balance(account_info)
 
     # ISA 현재 평가금액
     isa_bal = isa_balance(account_info)
@@ -318,13 +331,14 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
     # 지금 기준으로 내야 되는 해외주식 양도 소득세
     now_overseas_tax = overseas_gain_tax(overseas_total_profit)
 
-    # 총 절세 가능 금액 
-    my_under_max, my_over_max, my_under_now, my_over_now = cut_tax(now_min_pp, now_over_pp, save_tax, now_overseas_tax)
-
+    # 총 절세 가능 금액
+    my_under_max, my_over_max, my_under_now, my_over_now = cut_tax(
+        now_min_pp, now_over_pp, save_tax, now_overseas_tax
+    )
 
     # 프롬프트 조립
     prompt = ChatPromptTemplate.from_template(
-    """
+        """
     너는 친절한 대한민국의 증권 계좌를 통한 절세 도우미야.
     계산을 통해 얻은 정보들을 활용하여, 사용자가 편하게  이해할 수 있도록 보고서 형식으로 작성해 줘야 해.
 
@@ -373,16 +387,39 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
     """
     )
 
-    json_result = {"year_pb":year_pb, "year_irp":year_irp, "remain_pb":remain_pb, "remain_irp":remain_irp, "isa_total_profit":isa_total_profit, 
-            "pb_exist":pb_exist, "irp_exist":irp_exist, "isa_exist":isa_exist,
-            "save_tax": save_tax, "overseas_total_profit":overseas_total_profit, "overseas_min":overseas_min, 
-            "total_balance":total_balance, "total_pb":total_pb, "irp_bal":irp_bal, "isa_bal":isa_bal,
-            "now_overseas_tax":now_overseas_tax, "my_under_now":my_under_now, "my_over_now":my_over_now, "my_under_max":my_under_max, "my_over_max":my_over_max, 
-            "created_at": datetime.utcnow()}
-    
-    report_text = (prompt|llm|StrOutputParser()).invoke(json_result)
+    json_result = {
+        "year_pb": year_pb,
+        "year_irp": year_irp,
+        "remain_pb": remain_pb,
+        "remain_irp": remain_irp,
+        "isa_total_profit": isa_total_profit,
+        "pb_exist": pb_exist,
+        "irp_exist": irp_exist,
+        "isa_exist": isa_exist,
+        "save_tax": save_tax,
+        "overseas_total_profit": overseas_total_profit,
+        "overseas_min": overseas_min,
+        "total_balance": total_balance,
+        "total_pb": total_pb,
+        "irp_bal": irp_bal,
+        "isa_bal": isa_bal,
+        "now_overseas_tax": now_overseas_tax,
+        "my_under_now": my_under_now,
+        "my_over_now": my_over_now,
+        "my_under_max": my_under_max,
+        "my_over_max": my_over_max,
+        "created_at": datetime.utcnow(),
+    }
+
+    report_text = (prompt | llm | StrOutputParser()).invoke(json_result)
     # (3-1) 보고서를 MongoDB에 저장
-    report = {"user_id": user_id, "report_text": report_text, "data_result": json_result}
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    report = {
+        "user_id": user_id,
+        "report_text": report_text,
+        "data_result": json_result,
+        "identifier": timestamp,
+    }
     strategyHistory_collection.insert_one(report)
 
     return {"user_id": user_id, "report": report_text, "data_result": json_result}
@@ -390,19 +427,22 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
 
 # # (7) MongoDB에서 저장된 보고서 목록 불러오기
 
+
 @app.get("/")
 async def get_reports(db=Depends(get_db)):
-   # _id를 포함시키고, _id를 str로 변환하여 반환
+    # _id를 포함시키고, _id를 str로 변환하여 반환
     history_list = await db.strategyHistory.find().to_list(100)
     history = [
-        {**history, "_id": serialize_objectid(history["_id"])} for history in history_list
+        {**history, "_id": serialize_objectid(history["_id"])}
+        for history in history_list
     ]
     return {"history": history}
 
 
 # # (8) MongoDB에서 저장된 보고서 ID로 상세조회
-@app.get("/{id}")
-async def get_report_detail(id: str, db=Depends(get_db)):
-    object_id = ObjectId(id)
-    history = await db.strategyHistory.find({"_id": object_id}).to_list(100)
+@app.get("/{identifier}")
+def get_report_detail(identifier: str, db=Depends(get_db)):
+    history = strategyHistory_collection.find_one(
+        {"identifier": identifier}, {"_id": 0}
+    )
     return history
