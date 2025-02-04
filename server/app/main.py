@@ -1,13 +1,6 @@
 from fastapi import FastAPI, Depends
 from pymongo import MongoClient
 from bson import ObjectId
-
-# from langchain.embeddings.openai import OpenAIEmbeddings
-# from langchain.vectorstores import Chroma
-# from langchain.chains import RetrievalQA
-# from langchain.chat_models import ChatOpenAI
-# from langchain.schema import HumanMessage
-
 from .db.database import get_db, strategyHistory_collection
 from pydantic import BaseModel
 from typing import List
@@ -27,18 +20,8 @@ app = FastAPI(
     title="Tax Check", version="1.0", description="사용자의 절세를 돕는 전략 보고서"
 )
 
-# OpenAI API 설정
-# OPENAI_API_KEY = "your-openai-api-key"
-# embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
 
-# # 벡터 DB (ChromaDB) 설정 - 절세 전략 & 세법 규정 분리 저장
-# strategy_vector_store = Chroma(persist_directory="./strategy_db", embedding_function=embeddings)
-# law_vector_store = Chroma(persist_directory="./law_db", embedding_function=embeddings)
-
-# strategy_retriever = strategy_vector_store.as_retriever()
-# law_retriever = law_vector_store.as_retriever()
-
-llm = ChatOpenAI(model="gpt-4", openai_api_key=os.getenv("OPENAI_API_KEY"))
+llm = ChatOpenAI(model="gpt-4o", openai_api_key=os.getenv("OPENAI_API_KEY"), temperature=0)
 
 # DB Setting
 MONGO_URI = os.getenv("MONGO_URI")
@@ -133,6 +116,13 @@ def calc_irp_tax(remains: float):
     ) * 0.165  # 5500만원 이하하인 경우 현재 납입 금액에서 받는 세액 공제
     return now_min_pp, now_over_pp
 
+# 전체 증권 계좌 평가금액의 합
+
+# ISA, IRP, 연금저축계좌별 정보 요약
+# 총 납입금액
+# 총 절세 가능 금액 
+
+
 
 # ISA 계좌 총 수익 통산
 def profit_isa(account_info: List[AccountInfo]):
@@ -207,6 +197,8 @@ def overseas_profit(account_info: List[AccountInfo]):
 def overseas_min_tax(total_profit):
     if total_profit > 2500000:
         return "손실 중인 종목 매도"
+    elif total_profit == 0:
+        return "아직 해외 주식에 대한 수익이 없으시군요. 해외 주식 수익은 연 2,500,000원까지는 비과세 한도임을 참고해 주세요."
     else:
         return "아직 2,500,000원 미만의 수익이기에에 비과세 한도입니다."
       
@@ -233,19 +225,22 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
 
     prompt = ChatPromptTemplate.from_template(
         """
-    너는 대한민국의 증권 계좌를 통한 절세 도우미야.
-    계산을 통해 얻은 정보들을 활용하여, 사용자가 편하게 이해할 수 있도록 보고서 형식으로 작성해 줘야 해.
+    너는 친절한 대한민국의 증권 계좌를 통한 절세 도우미야.
+    계산을 통해 얻은 정보들을 활용하여, 사용자가 편하게  이해할 수 있도록 보고서 형식으로 작성해 줘야 해.
 
     1. 연금저축계좌/IRP
     최대로 세액 공제를 받기 위해 우선 연금저축계좌와 IRP 계좌가 있는지 확인.
-    {pb_exist}가 1이면 연금저축계좌가 존재한다.
-    {irp_exist}가 1이면 IRP계좌가 존재한다.
+    {pb_exist}가 0이면 연금저축계좌 장점과 함께 개설을 안내한다.
+    {irp_exist}가 0이면 IRP계좌의 장점과 함께 개설을 안내한다.
     0일 경우 존재하지 않으니, 계좌 개설 안내와 함께 납입을 안내한다.
+    {pb_exist}가 1일 경우
     연금저축계좌에 추가 납입해야 하는 금액: {remain_pb}
+    {pb_exist}가 1일 경우우
     IRP에 추가 납입해야 하는 금액: {remain_irp}
 
     2. ISA 계좌
-    {isa_exist}가 1이면 ISA 계좌가 존재하고 0이면 존재하지 않는다. ISA 계좌의 혜택과 함께 개설을 권유해야 한다.
+    {isa_exist}가 1이면 ISA 계좌가 존재하고 0이면 존재하지 않는다.
+    ISA 계좌가 존재하지 않을 경우, ISA 계좌의 혜택과 함께 개설을 권유해야 한다.
     ISA 계좌가 존재하지 않는다면 아래 지금까지 얻은 수익과 절세한 금액은 보고서에 사용하지 않는다.
     ISA 계좌에서 지금까지 얻은 수익: {isa_total_profit},
     ISA 계좌를 사용했기에 절세한 금액: {save_tax}
@@ -253,57 +248,25 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
     3. 해외주식 양도소득세 계산
     해외 주식 손익통산한 금액: {overseas_total_profit}
     해외 주식 매도 전략: {overseas_min}
-    해외 주식을 손익통산한 금액이 0일 경우, 아직 해외 주식을 매도하지 않은 것 같지만 연 250만원까지는 수익에 대해 비과세이므로, 250만원까지는 매도해도 된다고 안내해 줘.
 
     이러한 계산을 기반으로 정중하게 보고서를 작성해 줘. 각 계좌별 절세 전략과 함께 길고 친절하게 설명해 줘.
-    마크 다운 형식으로 제목이 조금 더 크고 돋보이게 출력해 줘.                                  
+    금융 지식을 잘 모르는 사용자도 잘 알 수 있게, 절세 관련 용어는 쉽게 풀거나 예시를 들어 설명해 줘. 
+    마크다운 형식으로 제목이 잘 보이게 출력해 줘.                                
     """
     )
 
     report_text = (prompt|llm|StrOutputParser()).invoke({"remain_pb":remain_pb, "remain_irp":remain_irp, "isa_total_profit":isa_total_profit, 
                                                          "pb_exist":pb_exist, "irp_exist":irp_exist, "isa_exist":isa_exist,
                                                          "save_tax": save_tax, "overseas_total_profit":overseas_total_profit, "overseas_min":overseas_min})
-
+    json_result = {"remain_pb":remain_pb, "remain_irp":remain_irp, "isa_total_profit":isa_total_profit, 
+            "pb_exist":pb_exist, "irp_exist":irp_exist, "isa_exist":isa_exist,
+            "save_tax": save_tax, "overseas_total_profit":overseas_total_profit, "overseas_min":overseas_min, "created_at": datetime.utcnow()}
 
     # (3-1) 보고서를 MongoDB에 저장
-    report = {"user_id": user_id, "report_text": report_text}
+    report = {"user_id": user_id, "report_text": report_text, "data_result": json_result}
     strategyHistory_collection.insert_one(report)
 
-    return {"user_id": user_id, "report": report_text}
-
-
-# # (4) RAG에 세법 규정 추가
-# @app.post("/add_tax_law")
-# def add_tax_law(law: TaxLaw):
-#     """새로운 세법 규정을 벡터 DB에 추가"""
-#     law_vector_store.add_texts([law.text])
-#     return {"message": "세법 규정이 성공적으로 추가되었습니다."}
-
-# # (5) Modular RAG 기반 절세 전략 보고서 생성 (세법 검증 포함)
-# @app.post("/generate_verified_rag_report")
-# def generate_verified_rag_report(user_id: str, account_info: AccountInfo):
-#     """절세 전략을 검색한 후, 세법과 비교하여 검증 후 최종 보고서를 생성"""
-#     account_data = f"계좌번호: {account_info.account_number}, 잔액: {account_info.balance}"
-
-#     # 절세 전략 검색
-#     strategy_info = strategy_qa_chain.run(account_data)
-
-#     # LLM을 이용한 최종 절세 전략 평가
-#     prompt = f"""
-#     사용자의 계좌 정보를 기반으로 절세 전략을 추천해줘.
-#     절세 전략: {strategy_info}
-#     관련 세법 규정: {law_info}
-
-#     위 절세 전략이 세법과 일치하는지 분석하고, 만약 법적 문제가 있다면 수정된 절세 전략을 제시해줘.
-#     """
-#     response = llm([HumanMessage(content=prompt)])
-#     report_text = response.content
-
-#     # (6) MongoDB에 저장
-#     report = {"user_id": user_id, "account_number": account_info.account_number, "report_text": report_text}
-#     strategyHistory_collection.insert_one(report)
-
-#     return {"user_id": user_id, "report": report_text}
+    return {"user_id": user_id, "report": report_text, "data_result": json_result}
 
 
 # # (7) MongoDB에서 저장된 보고서 목록 불러오기
