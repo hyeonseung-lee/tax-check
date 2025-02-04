@@ -9,7 +9,7 @@
         <div class="report-content" v-html="formattedReportText"></div>
       </div>
       <div class="align-items: center;">
-        <div class="recommendation">
+        <div class="recommendation-graph">
           <h2>납입 현황</h2>
           <div class="divider"></div>
           <div class="chart-container">
@@ -19,13 +19,12 @@
       </div>
     </div>
     <div></div>
-    <div>
-      <div class="recommendation">
+    <div class="AI-container">
+      <div class="recommendation" style="border-right: 1px solid #ccc">
         <h2>AI 추천 종목</h2>
         <div class="divider"></div>
         <div class="stock-info">
-          <h3>{{ stock.name }}</h3>
-          <p>{{ stock.price }}원</p>
+          <h3>{{ stock.name }} {{ stock.price }}원</h3>
           <div class="description-nav">
             <button @click="prevStock" class="nav-button">◀</button>
             <span class="news-contents">{{ stock.description }}</span>
@@ -51,7 +50,7 @@
 
 <script>
 import { marked } from "marked";
-// import axios from "axios";
+import axios from "axios";
 import BarChart from "./BarChart.vue";
 
 export default {
@@ -128,16 +127,16 @@ export default {
 
   methods: {
     fetchHistory() {
-      // axios
-      //   .get("http://221.168.39.188:8000/67a16e0312ed37d692162eb7")
-      //   .then((response) => {
-      //     this.reportText = response.data[0].report_text;
-      //     this.dataResult = response.data[0].data_result;
-      //     console.log(this.reportText);
-      //   })
-      //   .catch((error) => {
-      //     console.error("API 호출 오류:", error);
-      //   });
+      axios
+        .get("http://221.168.39.188:8000/20250204131404")
+        .then((response) => {
+          this.reportText = response.data[0].report_text;
+          this.dataResult = response.data[0].data_result;
+          console.log(this.reportText);
+        })
+        .catch((error) => {
+          console.error("API 호출 오류:", error);
+        });
     },
     prevStock() {
       if (this.currentIndex === 0) {
@@ -203,6 +202,16 @@ export default {
   height: 550px;
 }
 
+.AI-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  height: 300px;
+}
+
 .report {
   width: 1500px;
   padding: 20px;
@@ -222,7 +231,12 @@ export default {
 }
 
 .recommendation {
-  width: 600px;
+  width: 800px;
+  padding: 20px;
+}
+
+.recommendation-graph {
+  width: 500px;
   padding: 20px;
 }
 
