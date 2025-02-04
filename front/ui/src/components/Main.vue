@@ -45,9 +45,9 @@ export default {
         },
         {
           type: "ISA",
-          totalProfitLoss: 80000,
+          totalProfitLoss: -80000,
           totalPurchaseAmount: 400000,
-          totalEvaluationAmount: 480000,
+          totalEvaluationAmount: 320000,
           items: [
             { name: "종목 C", value: 250000 },
             { name: "종목 D", value: 150000 },

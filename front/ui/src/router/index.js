@@ -3,6 +3,7 @@ import Login from "@/components/Login.vue";
 import Main from "@/components/Main.vue";
 import List from "@/components/List.vue";
 import Report from "@/components/Report.vue";
+import ReportHistory from "@/components/ReportHistory.vue";
 
 const routes = [
   {
@@ -24,6 +25,11 @@ const routes = [
     path: "/report",
     name: "Report",
     component: Report,
+  },
+  {
+    path: "/report-history",
+    name: "ReportHistory",
+    component: ReportHistory,
   },
 ];
 

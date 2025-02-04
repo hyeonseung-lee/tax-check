@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from pymongo import MongoClient
 from bson import ObjectId
 from .db.database import get_db, strategyHistory_collection
@@ -14,6 +15,13 @@ import os
 from datetime import datetime
 
 load_dotenv()
+origins = [
+    "http://localhost",
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://localhost:8080",
+]
+
 
 # FastAPI 앱 생성
 app = FastAPI(
@@ -34,37 +42,41 @@ strategyHistory_collection = db.strategyHistory
 
 
 class Transactions(BaseModel):
-    created_date: str #입출금날짜
-    amount: float #거래금액
-    is_dividend: int #배당금이면 1, 내가 납입한 거면 0
+    created_date: str  # 입출금날짜
+    amount: float  # 거래금액
+    is_dividend: int  # 배당금이면 1, 내가 납입한 거면 0
+
 
 class Market(BaseModel):
-    created_date: str #거래날짜
-    buysell: int #buy는 1, sell은 0
-    stock_name: str #종목명
-    stock_amount: int #거래수량
-    stock_price: float #거래단가
-    average: float #평균단가가
+    created_date: str  # 거래날짜
+    buysell: int  # buy는 1, sell은 0
+    stock_name: str  # 종목명
+    stock_amount: int  # 거래수량
+    stock_price: float  # 거래단가
+    average: float  # 평균단가가
+
 
 class Stocks(BaseModel):
-    stock_name: str #종목명
-    average: float #평균단가
-    valuation: float #평가금액
-    stock_amount: int #보유수량
+    stock_name: str  # 종목명
+    average: float  # 평균단가
+    valuation: float  # 평가금액
+    stock_amount: int  # 보유수량
+
 
 class AccountInfo(BaseModel):
-    managing: str #운용사
-    account_status: int #계좌상태
-    account_number: str #계좌번호
-    account_category: str #계좌종류 (IRP, ISA, 연금저축펀드, 해외주식계좌, 일반계좌)
-    balance: float #평가금액
-    purchase: float #매수금액
-    profit: float #평가손익
-    created_date: str #계좌개설일
-    transactions: List[Transactions] #입출금
-    market: List[Market] #매매내역
-    stocks: List[Stocks] #보유종목
-    
+    managing: str  # 운용사
+    account_status: int  # 계좌상태
+    account_number: str  # 계좌번호
+    account_category: str  # 계좌종류 (IRP, ISA, 연금저축펀드, 해외주식계좌, 일반계좌)
+    balance: float  # 평가금액
+    purchase: float  # 매수금액
+    profit: float  # 평가손익
+    created_date: str  # 계좌개설일
+    transactions: List[Transactions]  # 입출금
+    market: List[Market]  # 매매내역
+    stocks: List[Stocks]  # 보유종목
+
+
 # ObjectId를 문자열로 변환하는 함수
 def serialize_objectid(obj):
     if isinstance(obj, ObjectId):
@@ -79,22 +91,22 @@ def calc_irp(account_info: List[AccountInfo]):
     irp_exist = 0
     pb_exist = 0
     for account in account_info:
-        if account.account_category == 'IRP':
+        if account.account_category == "IRP":
             irp_exist = 1
             for transaction in account.transactions:
                 created_date = transaction.created_date
                 amount = int(transaction.amount)
-                
-                if created_date[:4] == str(int(datetime.today().year)-1):
+
+                if created_date[:4] == str(int(datetime.today().year) - 1):
                     total_irp += amount
 
-        if account.account_category == '연금저축계좌':
+        if account.account_category == "연금저축계좌":
             pb_exist = 1
             for transaction in account.transactions:
                 created_date = transaction.created_date
                 amount = int(transaction.amount)
-                
-                if created_date[:4] == str(int(datetime.today().year)-1):
+
+                if created_date[:4] == str(int(datetime.today().year) - 1):
                     total_pb += amount
 
     # 연금저축계좌 최대
@@ -103,7 +115,14 @@ def calc_irp(account_info: List[AccountInfo]):
     # IRP 계좌 최대
     remain_irp = 3000000 - total_irp
 
-    return remain_pb, remain_irp, remain_pb + remain_irp, pb_exist, irp_exist #연금저축계좌 남은납입금액, irp 남은납입금액, 총 남은납입금액
+    return (
+        remain_pb,
+        remain_irp,
+        remain_pb + remain_irp,
+        pb_exist,
+        irp_exist,
+    )  # 연금저축계좌 남은납입금액, irp 남은납입금액, 총 남은납입금액
+
 
 # 현재 금액일 시 세액 공제 얼마 받는지와 최대로 채우면 얼마 받는지
 # 총급여 55,000,000원 이하는 16.5%(최대 1,485,000원), 초과 시 13.2%(최대 1,188,000원) 공제.
@@ -128,9 +147,9 @@ def calc_irp_tax(remains: float):
 def profit_isa(account_info: List[AccountInfo]):
     total_profit = 0
     isa_exist = 0
-    isa_category = ''
+    isa_category = ""
     for account in account_info:
-        if account.account_category[:3] == 'ISA':
+        if account.account_category[:3] == "ISA":
             isa_exist = 1
             isa_category = account.account_category[4:]
             total_profit += account.profit
@@ -201,7 +220,8 @@ def overseas_min_tax(total_profit):
         return "아직 해외 주식에 대한 수익이 없으시군요. 해외 주식 수익은 연 2,500,000원까지는 비과세 한도임을 참고해 주세요."
     else:
         return "아직 2,500,000원 미만의 수익이기에에 비과세 한도입니다."
-      
+
+
 # (3) LangChain을 사용하여 ChatGPT로 절세 전략 보고서 생성
 @app.post("/generate_report")
 def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(get_db)):
@@ -211,7 +231,7 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
     # 지금까지 납입한 연금저축계좌와 irp의 세액 공제 금액
     now_min_pp, now_over_pp = calc_irp_tax(remain_pp)
 
-    # ISA 손익통산과 계좌 종류 
+    # ISA 손익통산과 계좌 종류
     isa_total_profit, isa_category, isa_exist = profit_isa(account_info)
 
     # ISA로 절세한 금액
@@ -280,7 +300,5 @@ async def get_reports(db=Depends(get_db)):
 @app.get("/{id}")
 async def get_report_detail(id: str, db=Depends(get_db)):
     object_id = ObjectId(id)
-    history = (
-        await db.strategyHistory.find({"_id": object_id}, {"_id": 0}).to_list(100)
-    )
+    history = await db.strategyHistory.find({"_id": object_id}, {"_id": 0}).to_list(100)
     return history
