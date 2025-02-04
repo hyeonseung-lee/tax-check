@@ -9,8 +9,10 @@
     </div>
     <div class="content">
       <div class="profit-content">
-        <span>총 평가 손익:</span>
-        <span>{{ formatCurrency(account.totalProfitLoss) }} 원</span>
+        <span>총 손익:</span>
+        <span :class="[profitLossColor]"
+          >{{ formatCurrency(account.totalProfitLoss) }} 원</span
+        >
       </div>
       <div class="profit-content">
         <span>총 매입입 손익:</span>
@@ -43,6 +45,11 @@ export default {
     account: {
       type: Object,
       required: true,
+    },
+  },
+  computed: {
+    profitLossColor() {
+      return this.account.totalProfitLoss < 0 ? "negative" : "positive";
     },
   },
   data() {
@@ -82,6 +89,7 @@ export default {
 .content {
   text-align: right;
   margin-right: 10px;
+  line-height: 25px;
 }
 .stocks {
   list-style-type: none;
@@ -105,5 +113,12 @@ export default {
   width: 95%; /* 전체 너비 사용 */
   margin-left: 10px;
   margin-bottom: 5px;
+}
+.negative {
+  color: #1a73e8;
+}
+
+.positive {
+  color: #d93025;
 }
 </style>
