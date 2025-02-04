@@ -109,19 +109,23 @@ def calc_irp(account_info: List[AccountInfo]):
                 if created_date[:4] == str(int(datetime.today().year) - 1):
                     total_pb += amount
 
-    # 연금저축계좌 최대
+    # 연금저축계좌 
+    year_pb = total_pb
     remain_pb = 6000000 - total_pb
 
     # IRP 계좌 최대
+    year_irp = total_irp
     remain_irp = 3000000 - total_irp
 
     return (
+        year_pb,
+        year_irp,
         remain_pb,
         remain_irp,
         remain_pb + remain_irp,
         pb_exist,
         irp_exist,
-    )  # 연금저축계좌 남은납입금액, irp 남은납입금액, 총 남은납입금액
+    )  # 올해연금저축계좌금액, 올해IRP금액, 연금저축계좌 남은납입금액, irp 남은납입금액, 총 남은납입금액
 
 
 # 현재 금액일 시 세액 공제 얼마 받는지와 최대로 채우면 얼마 받는지
@@ -282,7 +286,7 @@ def overseas_min_tax(total_profit):
 @app.post("/generate_report")
 def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(get_db)):
     # 남은 연금저축계좌 납입금액, 남은 irp 납입금액, 남은 전체 납입금액
-    remain_pb, remain_irp, remain_pp, pb_exist, irp_exist = calc_irp(account_info)
+    year_pb, year_irp, remain_pb, remain_irp, remain_pp, pb_exist, irp_exist = calc_irp(account_info)
 
     # 지금까지 납입한 연금저축계좌와 irp의 세액 공제 금액
     now_min_pp, now_over_pp = calc_irp_tax(remain_pp)
@@ -336,8 +340,10 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
     {irp_exist}가 0이면 IRP계좌의 장점과 함께 개설을 안내한다.
     0일 경우 존재하지 않으니, 계좌 개설 안내와 함께 납입을 안내한다.
     {pb_exist}가 1일 경우
+    올해 지금까지 연금저축계좌에 납입한 금액: {year_pb}
     연금저축계좌에 추가 납입해야 하는 금액: {remain_pb}
     {pb_exist}가 1일 경우우
+    올해 지금까지 IRP에 납입한 금액: {year_irp}
     IRP에 추가 납입해야 하는 금액: {remain_irp}
 
     2. ISA 계좌
@@ -367,7 +373,7 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
     """
     )
 
-    json_result = {"remain_pb":remain_pb, "remain_irp":remain_irp, "isa_total_profit":isa_total_profit, 
+    json_result = {"year_pb":year_pb, "year_irp":year_irp, "remain_pb":remain_pb, "remain_irp":remain_irp, "isa_total_profit":isa_total_profit, 
             "pb_exist":pb_exist, "irp_exist":irp_exist, "isa_exist":isa_exist,
             "save_tax": save_tax, "overseas_total_profit":overseas_total_profit, "overseas_min":overseas_min, 
             "total_balance":total_balance, "total_pb":total_pb, "irp_bal":irp_bal, "isa_bal":isa_bal,
