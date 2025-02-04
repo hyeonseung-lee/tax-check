@@ -128,44 +128,34 @@ export default {
   },
   mounted() {
     this.fetchHistory();
-    setTimeout(() => {
-      this.loading = false; // 5초 후 로딩 상태 변경
-    }, 5000);
   },
 
   methods: {
-    async fetchHistory() {
+    fetchHistory() {
       try {
-        const response = await axios.post("http://221.168.39.188:8000/login", {
-          // 필요한 로그인 데이터
+        axios.post("http://221.168.39.188:8000/login").then((response) => {
+          axios
+            .post(
+              "http://221.168.39.188:8000/generate_report?user_id=0011",
+              response.data, // 로그인 응답 데이터를 요청 본문으로 전달
+              {
+                headers: {
+                  "Content-Type": "application/json", // JSON 형식으로 전송
+                },
+              }
+            )
+            .then((res) => {
+              this.reportText = res.data.report;
+              this.dataResult = res.data.data_result;
+              this.loading = false; // 5초 후 로딩 상태 변경
+            })
+            .catch((error) => {
+              console.error("API 호출 오류:", error);
+            });
         });
-        this.accounts = response.data.map((account) => ({
-          type: account.account_category,
-          totalProfitLoss: account.profit,
-          totalPurchaseAmount: account.purchase,
-          totalEvaluationAmount: account.balance,
-          items: account.stocks.map((stock) => ({
-            name: stock.stock_name,
-            value: stock.valuation,
-          })),
-        }));
       } catch (error) {
         console.error("계좌 정보를 가져오는 데 실패했습니다.", error);
       }
-
-      axios
-        .post("/generate_report", {
-          user_id: "0011",
-          account_info: this.accountInfo,
-        })
-        .then((response) => {
-          this.reportText = response.data[0].report_text;
-          this.dataResult = response.data[0].data_result;
-          console.log(this.reportText);
-        })
-        .catch((error) => {
-          console.error("API 호출 오류:", error);
-        });
     },
     prevStock() {
       if (this.currentIndex === 0) {
