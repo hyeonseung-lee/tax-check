@@ -27,16 +27,20 @@
           <div class="divider"></div>
           <ProfitChart :dataResult="graphData" />
         </div>
-        <div class="recommendation">
+        <div class="recommendation-AI">
           <h2>AI 추천 상품</h2>
           <div class="divider"></div>
           <div class="stock-info">
-            <h3>{{ stock.name }} {{ stock.price }}원</h3>
-            <div class="description-nav">
-              <button @click="prevStock" class="nav-button">◀</button>
-              <span class="news-contents">{{ stock.description }}</span>
-              <button @click="nextStock" class="nav-button">▶</button>
+            <button @click="prevStock" class="nav-button">◀</button>
+            <div
+              class="stock-title"
+              OnClick="location.href ='https://securities.miraeasset.com/hks/hks4325/n02.do'"
+              style="cursor: pointer"
+            >
+              <h1>{{ stock.name }}</h1>
+              <h2>{{ stock.price }}</h2>
             </div>
+            <button @click="nextStock" class="nav-button">▶</button>
           </div>
         </div>
       </div>
@@ -74,23 +78,17 @@ export default {
         created_at: "2025-02-04T01:31:47.764000",
       },
       stock: {
-        name: "삼성전자",
-        price: "51,000",
-        description:
-          "삼성전자는 현재 주가 하락과 함께 여러 도전 과제에 직면해 있지만, 일부 전문가들은 향후 실적 개선을 기대하고 있습니다.",
+        name: "청년형 장기집합투자증권저축",
+        price: "연 600만원 한도. 40%소득공제 혜택(연240만원한도)",
       },
       stocks: [
         {
-          name: "삼성전자",
-          price: "51,000",
-          description:
-            "삼성전자는 현재 주가 하락과 함께 여러 도전 과제에 직면해 있지만, 일부 전문가들은 향후 실적 개선을 기대하고 있습니다.",
+          name: "청년형 장기집합투자증권저축",
+          price: "연 600만원 한도. 40%소득공제 혜택(연240만원한도)",
         },
         {
-          name: "LG전자",
-          price: "100,000",
-          description:
-            "LG전자의 주식은 CES 2025에서의 신기술 발표와 외국인 투자자의 순매수세로 긍정적인 반응을 얻고 있지만, 실적 저조가 우려되는 상황입니다. 앞으로의 시장 반응과 실적 개선 여부가 주가에 중요한 영향을 미칠 것으로 보입니다.",
+          name: "벤처기업투자신탁(펀드)",
+          price: " 투자금액 중 3천만원까지에 대해 투자금액의 10% 소득공제",
         },
         // 추가 종목을 여기에 추가
       ],
@@ -118,6 +116,9 @@ export default {
   computed: {
     formattedReportText() {
       return marked(this.reportText);
+    },
+    formattedText() {
+      return marked(this.stock.description);
     },
   },
   mounted() {
@@ -147,7 +148,7 @@ export default {
                 labels: ["5500만원 이하", "5500만원 초과"], // 그래프의 레이블
                 datasets: [
                   {
-                    label: "5500만원 이하", // 'my_under_now'와 'my_under_max' 비교
+                    label: "현재 절세액", // 'my_under_now'와 'my_under_max' 비교
                     data: [
                       res.data.data_result.my_under_now,
                       res.data.data_result.my_over_now,
@@ -158,7 +159,7 @@ export default {
                     ],
                   },
                   {
-                    label: "5500만원 이상", // 'my_over_now'와 'my_over_max' 비교
+                    label: "최대 가능 절세액", // 'my_over_now'와 'my_over_max' 비교
                     data: [
                       res.data.data_result.my_under_max,
                       res.data.data_result.my_over_max,
@@ -278,6 +279,10 @@ export default {
   width: 800px;
   padding: 20px;
 }
+.recommendation-AI {
+  width: 850px;
+  padding: 20px;
+}
 
 .recommendation-graph {
   width: 500px;
@@ -285,7 +290,9 @@ export default {
 }
 
 .stock-info {
-  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 120px;
 }
 
 .description-nav {
@@ -293,6 +300,7 @@ export default {
   align-items: center;
   justify-content: space-between;
   height: 100px;
+  text-align: left;
 }
 
 .navigation {
@@ -307,6 +315,7 @@ export default {
   border-radius: 5px;
   padding: 10px;
   cursor: pointer;
+  height: 50px;
 }
 
 .nav-button:hover {
@@ -324,5 +333,8 @@ export default {
   align-items: center;
   height: 100vh; /* 전체 화면 높이 */
   font-size: 24px; /* 로딩 텍스트 크기 */
+}
+.stock-title {
+  height: 150px;
 }
 </style>

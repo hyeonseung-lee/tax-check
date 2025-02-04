@@ -23,7 +23,7 @@ export default {
   methods: {
     fetchHistory() {
       axios
-        .get("http://221.168.39.188:8000/")
+        .get("http://221.168.39.188:8000/list")
         .then((response) => {
           console.log(response);
           this.history = response.data.history
