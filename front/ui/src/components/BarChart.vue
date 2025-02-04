@@ -107,7 +107,6 @@ export default {
             y: {
               title: {
                 display: true,
-                text: "IRP 펀드",
                 font: {
                   size: 20, // 제목 글자 크기 설정
                 },

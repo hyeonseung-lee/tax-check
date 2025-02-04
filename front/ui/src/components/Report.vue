@@ -23,6 +23,11 @@
       <div></div>
       <div class="AI-container">
         <div class="recommendation" style="border-right: 1px solid #ccc">
+          <h2>절세 가능 금액</h2>
+          <div class="divider"></div>
+          <ProfitChart :dataResult="graphData" />
+        </div>
+        <div class="recommendation">
           <h2>AI 추천 상품</h2>
           <div class="divider"></div>
           <div class="stock-info">
@@ -31,18 +36,6 @@
               <button @click="prevStock" class="nav-button">◀</button>
               <span class="news-contents">{{ stock.description }}</span>
               <button @click="nextStock" class="nav-button">▶</button>
-            </div>
-          </div>
-        </div>
-        <div class="recommendation">
-          <h2>Tax-Check 파트너 세무사</h2>
-          <div class="divider"></div>
-          <div class="stock-info">
-            <h3>{{ news.name }}</h3>
-            <div class="description-nav">
-              <button @click="prevNews" class="nav-button">◀</button>
-              <span class="news-contents">{{ news.description }}</span>
-              <button @click="nextNews" class="nav-button">▶</button>
             </div>
           </div>
         </div>
@@ -55,18 +48,19 @@
 import { marked } from "marked";
 import axios from "axios";
 import BarChart from "./BarChart.vue";
+import ProfitChart from "./ProfitChart.vue";
 
 export default {
   name: "ReportPage",
   components: {
     BarChart,
+    ProfitChart,
   },
   data() {
     return {
       accounts: "",
       loading: true, // 로딩 상태 추가
-      reportText:
-        "# 절세 전략 보고서\n\n안녕하세요! 절세를 위한 금융 전략을 안내해 드리겠습니다. 이 보고서는 연금저축계좌, IRP, ISA 계좌, 그리고 해외주식 양도소득세에 대한 절세 전략을 포함하고 있습니다. 각 항목별로 자세히 설명드리겠습니다.\n\n## 1. 연금저축계좌 및 IRP\n\n### 연금저축계좌와 IRP란?\n\n연금저축계좌와 IRP(Individual Retirement Pension)는 노후를 대비하여 돈을 모으는 계좌입니다. 이 계좌에 돈을 넣으면 세금 혜택을 받을 수 있습니다. 즉, 세금을 줄일 수 있는 좋은 방법입니다.\n\n### 계좌 개설 여부 확인\n\n- 연금저축계좌: 현재 연금저축계좌가 없으신 경우, 이 계좌를 개설하시는 것을 추천드립니다. 연금저축계좌는 노후 대비뿐만 아니라 세액 공제를 통해 세금을 줄일 수 있는 장점이 있습니다.\n  \n- IRP 계좌: IRP 계좌가 없으신 경우, 이 계좌도 개설하시는 것이 좋습니다. IRP는 연금저축계좌와 함께 사용하면 더 큰 세액 공제를 받을 수 있습니다.\n\n### 추가 납입 권장 금액\n\n- 연금저축계좌: 이미 계좌가 있으신 경우, 최대 세액 공제를 받기 위해 추가로 5,300,000원을 납입하시는 것이 좋습니다.\n  \n- IRP 계좌: IRP 계좌가 있으신 경우, 추가로 1,500,000원을 납입하시면 세액 공제를 극대화할 수 있습니다.\n\n## 2. ISA 계좌\n\n### ISA 계좌란?\n\nISA(Individual Savings Account)는 다양한 금융 상품에 투자할 수 있는 계좌로, 이 계좌를 통해 얻은 수익에 대해 일정 금액까지 비과세 혜택을 받을 수 있습니다. 즉, 투자 수익에 대한 세금을 줄일 수 있는 좋은 방법입니다.\n\n### 계좌 개설 여부 확인\n\n- ISA 계좌: 현재 ISA 계좌가 없으신 경우, 이 계좌를 개설하시는 것을 추천드립니다. ISA 계좌를 통해 얻은 수익은 비과세 혜택을 받을 수 있어 절세에 큰 도움이 됩니다.\n\n### 지금까지의 수익 및 절세 금액\n\nISA 계좌를 통해 지금까지 5,700,000원의 수익을 얻으셨고, 이를 통해 709,500원의 세금을 절약하셨습니다. 이는 ISA 계좌의 큰 장점 중 하나입니다.\n\n## 3. 해외주식 양도소득세\n\n### 해외주식 양도소득세란?\n\n해외 주식을 매도하여 얻은 이익에 대해 부과되는 세금입니다. 손익통산을 통해 손실과 이익을 합산하여 세금을 줄일 수 있습니다.\n\n### 절세 전략\n\n- 손익통산: 현재 해외 주식에서 손익통산한 금액은 3,300,000원입니다. 손익통산은 손실이 난 주식을 매도하여 이익과 상쇄시키는 방법으로, 이를 통해 세금을 줄일 수 있습니다.\n  \n- 손실 중인 종목 매도: 손실이 난 종목을 매도하여 손익통산을 활용하면, 세금을 줄이는 데 큰 도움이 됩니다.\n\n이 보고서를 통해 절세 전략을 이해하시고, 각 계좌의 장점을 최대한 활용하여 세금을 절약하시길 바랍니다. 추가적인 질문이 있으시면 언제든지 문의해 주세요. 감사합니다!",
+      reportText: "",
       dataResult: {
         remain_pb: 5300000,
         remain_irp: 1500000,
@@ -147,6 +141,36 @@ export default {
             .then((res) => {
               this.reportText = res.data.report;
               this.dataResult = res.data.data_result;
+
+              // 그래프 데이터 준비
+              this.graphData = {
+                labels: ["5500만원 이하", "5500만원 초과"], // 그래프의 레이블
+                datasets: [
+                  {
+                    label: "5500만원 이하", // 'my_under_now'와 'my_under_max' 비교
+                    data: [
+                      res.data.data_result.my_under_now,
+                      res.data.data_result.my_over_now,
+                    ],
+                    backgroundColor: [
+                      "rgba(140, 140, 140, 1)",
+                      "rgba(140, 140, 140, 1)",
+                    ],
+                  },
+                  {
+                    label: "5500만원 이상", // 'my_over_now'와 'my_over_max' 비교
+                    data: [
+                      res.data.data_result.my_under_max,
+                      res.data.data_result.my_over_max,
+                    ],
+                    backgroundColor: [
+                      "rgba(237, 108, 29, 1)",
+                      "rgba(237, 108, 29, 1)",
+                    ],
+                  },
+                ],
+              };
+
               this.loading = false; // 5초 후 로딩 상태 변경
             })
             .catch((error) => {
@@ -228,7 +252,7 @@ export default {
   padding: 20px;
   border: 1px solid #ccc;
   border-radius: 10px;
-  height: 300px;
+  height: 450px;
 }
 
 .report {
