@@ -414,7 +414,6 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
         "my_over_now": my_over_now,
         "my_under_max": my_under_max,
         "my_over_max": my_over_max,
-        "created_at": datetime.utcnow(),
     }
 
     report_text = (prompt | llm | StrOutputParser()).invoke(json_result)
@@ -428,7 +427,7 @@ def generate_report(user_id: str, account_info: List[AccountInfo], db=Depends(ge
     }
     strategyHistory_collection.insert_one(report)
 
-    return {"user_id": user_id, "report": report_text, "data_result": json_result}
+    return {"user_id": user_id, "report": report_text, "data_result": json_result, "created_at": datetime.utcnow()}
 
 
 @app.post("/login")
@@ -523,16 +522,11 @@ async def login(db=Depends(get_db)):
         ]
     }
     ]
-
-<<<<<<< Updated upstream
-
-=======
 # # (7) MongoDB에서 저장된 보고서 목록 불러오기
->>>>>>> Stashed changes
 @app.get("/")
 async def get_reports(db=Depends(get_db)):
     # _id를 포함시키고, _id를 str로 변환하여 반환
-    history_list = await db.strategyHistory.find().to_list(100)
+    history_list = await db.strategyHistory.find({"user_id": "0011"}).to_list(100)
     history = [
         {**history, "_id": serialize_objectid(history["_id"])}
         for history in history_list
