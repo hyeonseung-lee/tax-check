@@ -6,32 +6,42 @@
       <div class="report">
         <h2>AI 보고서</h2>
         <div class="divider"></div>
-        <p class="report-content" v-html="formattedReportText"></p>
+        <div class="report-content" v-html="formattedReportText"></div>
       </div>
       <div class="align-items: center;">
         <div class="recommendation">
-          <h2>AI 추천 종목</h2>
+          <h2>납입 현황</h2>
           <div class="divider"></div>
-          <div class="stock-info">
-            <h3>{{ stock.name }}</h3>
-            <p>{{ stock.price }}원</p>
-            <div class="description-nav">
-              <button @click="prevStock" class="nav-button">◀</button>
-              <span class="news-contents">{{ stock.description }}</span>
-              <button @click="nextStock" class="nav-button">▶</button>
-            </div>
+          <div class="chart-container">
+            <BarChart :dataResult="this.dataResult" />
           </div>
         </div>
-        <div class="recommendation">
-          <h2>참고 뉴스</h2>
-          <div class="divider"></div>
-          <div class="stock-info">
-            <h3>{{ news.name }}</h3>
-            <div class="description-nav">
-              <button @click="prevNews" class="nav-button">◀</button>
-              <span class="news-contents">{{ news.description }}</span>
-              <button @click="nextNews" class="nav-button">▶</button>
-            </div>
+      </div>
+    </div>
+    <div></div>
+    <div>
+      <div class="recommendation">
+        <h2>AI 추천 종목</h2>
+        <div class="divider"></div>
+        <div class="stock-info">
+          <h3>{{ stock.name }}</h3>
+          <p>{{ stock.price }}원</p>
+          <div class="description-nav">
+            <button @click="prevStock" class="nav-button">◀</button>
+            <span class="news-contents">{{ stock.description }}</span>
+            <button @click="nextStock" class="nav-button">▶</button>
+          </div>
+        </div>
+      </div>
+      <div class="recommendation">
+        <h2>참고 뉴스</h2>
+        <div class="divider"></div>
+        <div class="stock-info">
+          <h3>{{ news.name }}</h3>
+          <div class="description-nav">
+            <button @click="prevNews" class="nav-button">◀</button>
+            <span class="news-contents">{{ news.description }}</span>
+            <button @click="nextNews" class="nav-button">▶</button>
           </div>
         </div>
       </div>
@@ -40,21 +50,31 @@
 </template>
 
 <script>
+import { marked } from "marked";
+// import axios from "axios";
+import BarChart from "./BarChart.vue";
+
 export default {
   name: "ReportPage",
+  components: {
+    BarChart,
+  },
   data() {
     return {
       reportText:
-        "# 절세 보고서\n" +
-        "안녕하세요, 고객님. 저는 대한민국의 증권 계좌를 통한 절세 도우미입니다. 고객님의 계좌 정보를 분석한 결과를 바탕으로 절세 전략을 제안드리고자 합니다. 아래의 내용을 참고해 주시기 바랍니다.\n\n" +
-        "## 1. 연금저축계좌/IRP\n" +
-        "연금저축계좌와 IRP는 고객님의 장기적인 자산 운용에 도움이 될 수 있는 계좌입니다. 이 계좌들에 납입하신 금액은 소득세에서 공제받을 수 있어, 세금 절약에 큰 도움이 됩니다.\n" +
-        "현재 고객님께서는 **연금저축계좌에 530만원**, **IRP에 150만원**을 추가로 납입하시면 최대한의 세액 공제를 받을 수 있습니다. 이 금액을 납입하시면 고객님의 소득세 부담을 크게 줄일 수 있을 것입니다.\n\n" +
-        "## 2. ISA 계좌\n" +
-        "ISA 계좌는 고객님의 자산을 효율적으로 관리하고 세금을 절약할 수 있는 좋은 도구입니다. 현재 고객님의 ISA 계좌에서는 **570만원의 수익**을 얻으셨고, 이로 인해 **709,500원의 세금**을 절약하셨습니다. 이 계좌를 통해 고객님의 자산 운용이 효율적으로 이루어지고 있음을 알 수 있습니다.\n\n" +
-        "## 3. 해외주식 양도소득세 계산\n" +
-        "해외 주식 투자는 고수익을 기대할 수 있지만, 동시에 세금 부담도 커질 수 있습니다. 현재 고객님의 해외 주식 손익통산 금액은 **330만원**입니다. 이를 통해 고객님의 해외 주식 매도 전략을 '손실 중인 종목 매도'로 설정하였습니다. 이 전략을 통해 고객님의 세금 부담을 줄일 수 있을 것입니다.\n\n" +
-        "이상의 내용을 바탕으로 고객님의 절세 전략을 수립하시는 데 도움이 되었기를 바랍니다. 각 계좌별로 세부적인 전략을 수립하시고, 필요한 경우 전문가의 도움을 받으시는 것도 좋은 방법입니다. 감사합니다.",
+        "# 절세 전략 보고서\n\n안녕하세요! 절세를 위한 금융 전략을 안내해 드리겠습니다. 이 보고서는 연금저축계좌, IRP, ISA 계좌, 그리고 해외주식 양도소득세에 대한 절세 전략을 포함하고 있습니다. 각 항목별로 자세히 설명드리겠습니다.\n\n## 1. 연금저축계좌 및 IRP\n\n### 연금저축계좌와 IRP란?\n\n연금저축계좌와 IRP(Individual Retirement Pension)는 노후를 대비하여 돈을 모으는 계좌입니다. 이 계좌에 돈을 넣으면 세금 혜택을 받을 수 있습니다. 즉, 세금을 줄일 수 있는 좋은 방법입니다.\n\n### 계좌 개설 여부 확인\n\n- 연금저축계좌: 현재 연금저축계좌가 없으신 경우, 이 계좌를 개설하시는 것을 추천드립니다. 연금저축계좌는 노후 대비뿐만 아니라 세액 공제를 통해 세금을 줄일 수 있는 장점이 있습니다.\n  \n- IRP 계좌: IRP 계좌가 없으신 경우, 이 계좌도 개설하시는 것이 좋습니다. IRP는 연금저축계좌와 함께 사용하면 더 큰 세액 공제를 받을 수 있습니다.\n\n### 추가 납입 권장 금액\n\n- 연금저축계좌: 이미 계좌가 있으신 경우, 최대 세액 공제를 받기 위해 추가로 5,300,000원을 납입하시는 것이 좋습니다.\n  \n- IRP 계좌: IRP 계좌가 있으신 경우, 추가로 1,500,000원을 납입하시면 세액 공제를 극대화할 수 있습니다.\n\n## 2. ISA 계좌\n\n### ISA 계좌란?\n\nISA(Individual Savings Account)는 다양한 금융 상품에 투자할 수 있는 계좌로, 이 계좌를 통해 얻은 수익에 대해 일정 금액까지 비과세 혜택을 받을 수 있습니다. 즉, 투자 수익에 대한 세금을 줄일 수 있는 좋은 방법입니다.\n\n### 계좌 개설 여부 확인\n\n- ISA 계좌: 현재 ISA 계좌가 없으신 경우, 이 계좌를 개설하시는 것을 추천드립니다. ISA 계좌를 통해 얻은 수익은 비과세 혜택을 받을 수 있어 절세에 큰 도움이 됩니다.\n\n### 지금까지의 수익 및 절세 금액\n\nISA 계좌를 통해 지금까지 5,700,000원의 수익을 얻으셨고, 이를 통해 709,500원의 세금을 절약하셨습니다. 이는 ISA 계좌의 큰 장점 중 하나입니다.\n\n## 3. 해외주식 양도소득세\n\n### 해외주식 양도소득세란?\n\n해외 주식을 매도하여 얻은 이익에 대해 부과되는 세금입니다. 손익통산을 통해 손실과 이익을 합산하여 세금을 줄일 수 있습니다.\n\n### 절세 전략\n\n- 손익통산: 현재 해외 주식에서 손익통산한 금액은 3,300,000원입니다. 손익통산은 손실이 난 주식을 매도하여 이익과 상쇄시키는 방법으로, 이를 통해 세금을 줄일 수 있습니다.\n  \n- 손실 중인 종목 매도: 손실이 난 종목을 매도하여 손익통산을 활용하면, 세금을 줄이는 데 큰 도움이 됩니다.\n\n이 보고서를 통해 절세 전략을 이해하시고, 각 계좌의 장점을 최대한 활용하여 세금을 절약하시길 바랍니다. 추가적인 질문이 있으시면 언제든지 문의해 주세요. 감사합니다!",
+      dataResult: {
+        remain_pb: 5300000,
+        remain_irp: 1500000,
+        isa_total_profit: 5700000,
+        pb_exist: 1,
+        irp_exist: 1,
+        isa_exist: 1,
+        save_tax: 709500,
+        overseas_total_profit: 3300000,
+        overseas_min: "손실 중인 종목 매도",
+        created_at: "2025-02-04T01:31:47.764000",
+      },
       stock: {
         name: "삼성전자",
         price: "51,000",
@@ -99,10 +119,26 @@ export default {
   },
   computed: {
     formattedReportText() {
-      return this.reportText.replace(/\n/g, "<br>");
+      return marked(this.reportText);
     },
   },
+  mounted() {
+    this.fetchHistory();
+  },
+
   methods: {
+    fetchHistory() {
+      // axios
+      //   .get("http://221.168.39.188:8000/67a16e0312ed37d692162eb7")
+      //   .then((response) => {
+      //     this.reportText = response.data[0].report_text;
+      //     this.dataResult = response.data[0].data_result;
+      //     console.log(this.reportText);
+      //   })
+      //   .catch((error) => {
+      //     console.error("API 호출 오류:", error);
+      //   });
+    },
     prevStock() {
       if (this.currentIndex === 0) {
         this.currentIndex = this.stocks.length - 1;
@@ -180,10 +216,14 @@ export default {
   text-overflow: ellipsis; /* 넘치는 텍스트는 생략 표시 */
 }
 
+.chart-container {
+  height: 430px; /* 원하는 높이 설정 */
+  overflow-y: auto; /* 세로 방향으로 스크롤 가능 */
+}
+
 .recommendation {
   width: 600px;
   padding: 20px;
-  font-size: 1.2rem;
 }
 
 .stock-info {
