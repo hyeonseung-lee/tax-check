@@ -63,6 +63,7 @@ export default {
   },
   data() {
     return {
+      accounts: "",
       loading: true, // 로딩 상태 추가
       reportText:
         "# 절세 전략 보고서\n\n안녕하세요! 절세를 위한 금융 전략을 안내해 드리겠습니다. 이 보고서는 연금저축계좌, IRP, ISA 계좌, 그리고 해외주식 양도소득세에 대한 절세 전략을 포함하고 있습니다. 각 항목별로 자세히 설명드리겠습니다.\n\n## 1. 연금저축계좌 및 IRP\n\n### 연금저축계좌와 IRP란?\n\n연금저축계좌와 IRP(Individual Retirement Pension)는 노후를 대비하여 돈을 모으는 계좌입니다. 이 계좌에 돈을 넣으면 세금 혜택을 받을 수 있습니다. 즉, 세금을 줄일 수 있는 좋은 방법입니다.\n\n### 계좌 개설 여부 확인\n\n- 연금저축계좌: 현재 연금저축계좌가 없으신 경우, 이 계좌를 개설하시는 것을 추천드립니다. 연금저축계좌는 노후 대비뿐만 아니라 세액 공제를 통해 세금을 줄일 수 있는 장점이 있습니다.\n  \n- IRP 계좌: IRP 계좌가 없으신 경우, 이 계좌도 개설하시는 것이 좋습니다. IRP는 연금저축계좌와 함께 사용하면 더 큰 세액 공제를 받을 수 있습니다.\n\n### 추가 납입 권장 금액\n\n- 연금저축계좌: 이미 계좌가 있으신 경우, 최대 세액 공제를 받기 위해 추가로 5,300,000원을 납입하시는 것이 좋습니다.\n  \n- IRP 계좌: IRP 계좌가 있으신 경우, 추가로 1,500,000원을 납입하시면 세액 공제를 극대화할 수 있습니다.\n\n## 2. ISA 계좌\n\n### ISA 계좌란?\n\nISA(Individual Savings Account)는 다양한 금융 상품에 투자할 수 있는 계좌로, 이 계좌를 통해 얻은 수익에 대해 일정 금액까지 비과세 혜택을 받을 수 있습니다. 즉, 투자 수익에 대한 세금을 줄일 수 있는 좋은 방법입니다.\n\n### 계좌 개설 여부 확인\n\n- ISA 계좌: 현재 ISA 계좌가 없으신 경우, 이 계좌를 개설하시는 것을 추천드립니다. ISA 계좌를 통해 얻은 수익은 비과세 혜택을 받을 수 있어 절세에 큰 도움이 됩니다.\n\n### 지금까지의 수익 및 절세 금액\n\nISA 계좌를 통해 지금까지 5,700,000원의 수익을 얻으셨고, 이를 통해 709,500원의 세금을 절약하셨습니다. 이는 ISA 계좌의 큰 장점 중 하나입니다.\n\n## 3. 해외주식 양도소득세\n\n### 해외주식 양도소득세란?\n\n해외 주식을 매도하여 얻은 이익에 대해 부과되는 세금입니다. 손익통산을 통해 손실과 이익을 합산하여 세금을 줄일 수 있습니다.\n\n### 절세 전략\n\n- 손익통산: 현재 해외 주식에서 손익통산한 금액은 3,300,000원입니다. 손익통산은 손실이 난 주식을 매도하여 이익과 상쇄시키는 방법으로, 이를 통해 세금을 줄일 수 있습니다.\n  \n- 손실 중인 종목 매도: 손실이 난 종목을 매도하여 손익통산을 활용하면, 세금을 줄이는 데 큰 도움이 됩니다.\n\n이 보고서를 통해 절세 전략을 이해하시고, 각 계좌의 장점을 최대한 활용하여 세금을 절약하시길 바랍니다. 추가적인 질문이 있으시면 언제든지 문의해 주세요. 감사합니다!",
@@ -133,9 +134,30 @@ export default {
   },
 
   methods: {
-    fetchHistory() {
+    async fetchHistory() {
+      try {
+        const response = await axios.post("http://221.168.39.188:8000/login", {
+          // 필요한 로그인 데이터
+        });
+        this.accounts = response.data.map((account) => ({
+          type: account.account_category,
+          totalProfitLoss: account.profit,
+          totalPurchaseAmount: account.purchase,
+          totalEvaluationAmount: account.balance,
+          items: account.stocks.map((stock) => ({
+            name: stock.stock_name,
+            value: stock.valuation,
+          })),
+        }));
+      } catch (error) {
+        console.error("계좌 정보를 가져오는 데 실패했습니다.", error);
+      }
+
       axios
-        .get("http://221.168.39.188:8000/20250204131404")
+        .post("/generate_report", {
+          user_id: "0011",
+          account_info: this.accountInfo,
+        })
         .then((response) => {
           this.reportText = response.data[0].report_text;
           this.dataResult = response.data[0].data_result;

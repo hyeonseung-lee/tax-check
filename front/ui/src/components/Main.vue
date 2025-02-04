@@ -1,18 +1,23 @@
 <template>
-  <div class="main">
-    <h2 class="account-title">내 자산 평가</h2>
-    <div class="divider"></div>
-    <FinanceSummary />
-    <div class="account-list">
-      <h2 class="account-title">내 계좌 목록</h2>
+  <div v-if="loading" class="loading-screen">로딩 중...</div>
+  <div v-else>
+    <div class="main">
+      <h2 class="account-title">내 자산 평가</h2>
       <div class="divider"></div>
-      <AccountCard
-        v-for="(account, index) in accounts"
-        :key="index"
-        :account="account"
-      />
+      <FinanceSummary />
+      <div class="account-list">
+        <h2 class="account-title">내 계좌 목록</h2>
+        <div class="divider"></div>
+        <AccountCard
+          v-for="(account, index) in accounts"
+          :key="index"
+          :account="account"
+        />
+      </div>
+      <button class="tax-calculator" @click="calculateTax">
+        절세 계산하기
+      </button>
     </div>
-    <button class="tax-calculator" @click="calculateTax">절세 계산하기</button>
   </div>
 </template>
 
@@ -29,6 +34,7 @@ export default {
   },
   data() {
     return {
+      loading: true,
       assets: {
         totalValue: 1000000,
         totalProfitLoss: 200000,
@@ -62,6 +68,9 @@ export default {
   },
   mounted() {
     this.fetchAccounts(); // 컴포넌트가 마운트될 때 계좌 데이터 가져오기
+    setTimeout(() => {
+      this.loading = false; // 5초 후 로딩 상태 변경
+    }, 5000);
   },
 };
 </script>
@@ -99,5 +108,12 @@ export default {
   border-radius: 5px; /* 모서리 둥글게 */
   cursor: pointer; /* 커서 포인터 */
   z-index: 1000; /* 다른 요소 위에 표시 */
+}
+.loading-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* 전체 화면 높이 */
+  font-size: 24px; /* 로딩 텍스트 크기 */
 }
 </style>
