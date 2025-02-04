@@ -183,7 +183,7 @@ def irp_balance(account_info: List[AccountInfo]):
 def isa_balance(account_info: List[AccountInfo]):
     total_pb = 0
     for account in account_info:
-        if account.account_category[:4] == "ISA":
+        if account.account_category[:3] == "ISA":
             total_pb += account.balance
     return total_pb
 
